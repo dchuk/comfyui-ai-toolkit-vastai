@@ -59,3 +59,18 @@ jobs:
             AI_TOOLKIT_REF=${{ inputs.ai_toolkit_ref || '6870ab4' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Build summary
+        run: |
+          echo "## Docker Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`dchuk/comfyui-ai-toolkit\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Tags:** \`latest\`, \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Dependency Versions" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency | Version |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| ComfyUI | \`${{ inputs.comfyui_ref || 'v0.3.0' }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| ComfyUI-Manager | \`${{ inputs.comfyui_manager_ref || '4.0.5' }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| API Wrapper | \`${{ inputs.api_wrapper_ref || '5b6a181' }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| AI-Toolkit | \`${{ inputs.ai_toolkit_ref || '6870ab4' }}\` |" >> $GITHUB_STEP_SUMMARY
