@@ -17,6 +17,7 @@ COPY ./ROOT /
 # ComfyUI Installation
 # ============================================================
 ARG COMFYUI_REF=v0.3.0
+ARG COMFYUI_MANAGER_REF=4.0.5
 
 RUN \
     set -euo pipefail && \
@@ -38,6 +39,9 @@ RUN \
     # Install ComfyUI-Manager
     cd /opt/workspace-internal/ComfyUI/custom_nodes && \
     git clone https://github.com/Comfy-Org/ComfyUI-Manager && \
+    cd ComfyUI-Manager && \
+    git checkout "${COMFYUI_MANAGER_REF}" && \
+    cd .. && \
     uv pip install --no-cache-dir -r ComfyUI-Manager/requirements.txt && \
     # Quick startup test in CPU mode
     cd /opt/workspace-internal/ComfyUI && \
