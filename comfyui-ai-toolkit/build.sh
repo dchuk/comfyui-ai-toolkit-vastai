@@ -10,6 +10,7 @@ COMFYUI_REF="${COMFYUI_REF:-v0.3.0}"
 AI_TOOLKIT_REF="${AI_TOOLKIT_REF:-6870ab4}"
 COMFYUI_MANAGER_REF="${COMFYUI_MANAGER_REF:-4.0.5}"
 API_WRAPPER_REF="${API_WRAPPER_REF:-5b6a181}"
+PLATFORM="${PLATFORM:-linux/amd64}"
 
 # Full image name (set DOCKER_REGISTRY to your DockerHub username or registry)
 DOCKER_REGISTRY="${DOCKER_REGISTRY:-}"
@@ -24,10 +25,12 @@ echo "  ComfyUI ref: ${COMFYUI_REF}"
 echo "  AI-Toolkit ref: ${AI_TOOLKIT_REF}"
 echo "  ComfyUI-Manager ref: ${COMFYUI_MANAGER_REF}"
 echo "  API Wrapper ref: ${API_WRAPPER_REF}"
+echo "  Platform: ${PLATFORM}"
 echo ""
 
 # Build the image
 docker buildx build \
+    --platform "${PLATFORM}" \
     --build-arg COMFYUI_REF="${COMFYUI_REF}" \
     --build-arg AI_TOOLKIT_REF="${AI_TOOLKIT_REF}" \
     --build-arg COMFYUI_MANAGER_REF="${COMFYUI_MANAGER_REF}" \
