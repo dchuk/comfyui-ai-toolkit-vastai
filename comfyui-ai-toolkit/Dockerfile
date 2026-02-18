@@ -102,6 +102,14 @@ RUN \
     [[ $torch_version_pre = $torch_version_post ]] || { echo "PyTorch version mismatch (wanted ${torch_version_pre} but got ${torch_version_post})"; exit 1; }
 
 # ============================================================
+# Auto-Update Configuration
+# ============================================================
+# AUTO_UPDATE: Set to "false" to disable auto-update on instance startup
+# COMFYUI_VERSION: Pin ComfyUI to a specific release tag (e.g., "v0.3.1"). Empty = latest release.
+# AI_TOOLKIT_VERSION: Pin AI-Toolkit to a specific ref (e.g., "6870ab4"). Empty = latest main branch.
+ENV AUTO_UPDATE=true
+
+# ============================================================
 # Optional: Include SD 1.5 model for testing/benchmarking
 # Uncomment if needed - adds ~2GB to image size
 # ============================================================
@@ -120,7 +128,13 @@ RUN \
 # Portal Configuration
 # ============================================================
 # Configure the VastAI portal to show our applications
-ENV PORTAL_CONFIG="localhost:8188:18188:/:ComfyUI|localhost:8288:18288:/:ComfyUI API|localhost:18675:8675:/:AI Toolkit"
+# Portal Configuration: format is hostname:external_port:internal_port:path:name
+# external_port = what Caddy listens on (must match ports exposed in VastAI template)
+# internal_port = where the actual application runs inside the container
+# When external_port == internal_port, Caddy skips proxying (direct access)
+# Service names must match what exit_portal.sh looks for in each startup script
+# Template ports should be: 1111, 18188, 18288, 8675
+ENV PORTAL_CONFIG="localhost:1111:11111:/:Instance Portal|localhost:18188:18188:/:ComfyUI|localhost:18288:18288:/:API Wrapper|localhost:8675:8675:/:AI Toolkit"
 
 # ============================================================
 # Finalize
