@@ -62,6 +62,8 @@ ENV COMFYUI_ARGS="--disable-auto-launch --enable-cors-header --port 18188"
 # ============================================================
 # ComfyUI API Wrapper Installation
 # ============================================================
+ARG API_WRAPPER_REF=5b6a181
+
 RUN \
     set -euo pipefail && \
     apt-get update && \
@@ -69,6 +71,7 @@ RUN \
     cd /opt && \
     git clone https://github.com/ai-dock/comfyui-api-wrapper && \
     cd comfyui-api-wrapper && \
+    git checkout "${API_WRAPPER_REF}" && \
     uv venv -p 3.12 && \
     . .venv/bin/activate && \
     uv pip install -r requirements.txt && \
