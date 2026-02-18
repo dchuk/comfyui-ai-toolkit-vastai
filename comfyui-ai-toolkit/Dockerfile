@@ -10,6 +10,18 @@ LABEL org.opencontainers.image.source="https://github.com/vastai/"
 LABEL org.opencontainers.image.description="Combined ComfyUI and AI-Toolkit image for Vast.ai"
 LABEL maintainer="Custom build"
 
+# ============================================================
+# Dependency Versions (all git clones pinned for reproducibility)
+# ============================================================
+# ComfyUI:         ${COMFYUI_REF}         (release tag)
+# ComfyUI-Manager: ${COMFYUI_MANAGER_REF} (release tag)
+# API Wrapper:     ${API_WRAPPER_REF}      (commit hash)
+# AI-Toolkit:      ${AI_TOOLKIT_REF}       (commit hash)
+# xformers:        unpinned (binary-matched to torch via --torch-backend)
+# sageattention:   1.0.6
+# timm:            1.0.22
+# Base image:      vastai/pytorch:2.9.1-cu128-cuda-12.9-mini-py312
+
 # Copy Supervisor configuration and startup scripts
 COPY ./ROOT /
 
