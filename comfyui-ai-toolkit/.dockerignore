@@ -1,0 +1,23 @@
+# Version control
+.git
+.gitignore
+
+# Build scripts (not needed inside image)
+build.sh
+
+# Documentation
+README.md
+*.md
+!Dockerfile
+
+# OS and IDE files
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+*.sublime-*
+
+# Logs and temp files
+*.log
+*.tmp
