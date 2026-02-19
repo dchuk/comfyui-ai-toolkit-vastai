@@ -8,23 +8,6 @@ on:
       - '.github/workflows/docker-build-push.yml'
 
   workflow_dispatch:
-    inputs:
-      comfyui_ref:
-        description: 'ComfyUI version (tag)'
-        required: false
-        default: 'v0.3.0'
-      comfyui_manager_ref:
-        description: 'ComfyUI-Manager version (tag)'
-        required: false
-        default: '4.0.5'
-      api_wrapper_ref:
-        description: 'API Wrapper version (commit)'
-        required: false
-        default: '5b6a181'
-      ai_toolkit_ref:
-        description: 'AI-Toolkit version (commit)'
-        required: false
-        default: '6870ab4'
 
 jobs:
   build-and-push:
@@ -52,11 +35,6 @@ jobs:
           tags: |
             dchuk/comfyui-ai-toolkit:latest
             dchuk/comfyui-ai-toolkit:${{ github.sha }}
-          build-args: |
-            COMFYUI_REF=${{ inputs.comfyui_ref || 'v0.3.0' }}
-            COMFYUI_MANAGER_REF=${{ inputs.comfyui_manager_ref || '4.0.5' }}
-            API_WRAPPER_REF=${{ inputs.api_wrapper_ref || '5b6a181' }}
-            AI_TOOLKIT_REF=${{ inputs.ai_toolkit_ref || '6870ab4' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -66,11 +44,6 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Image:** \`dchuk/comfyui-ai-toolkit\`" >> $GITHUB_STEP_SUMMARY
           echo "**Tags:** \`latest\`, \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Platform:** \`linux/amd64\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Dependency Versions" >> $GITHUB_STEP_SUMMARY
-          echo "| Dependency | Version |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----------|---------|" >> $GITHUB_STEP_SUMMARY
-          echo "| ComfyUI | \`${{ inputs.comfyui_ref || 'v0.3.0' }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| ComfyUI-Manager | \`${{ inputs.comfyui_manager_ref || '4.0.5' }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| API Wrapper | \`${{ inputs.api_wrapper_ref || '5b6a181' }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| AI-Toolkit | \`${{ inputs.ai_toolkit_ref || '6870ab4' }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "All dependencies installed at latest HEAD from their respective repositories." >> $GITHUB_STEP_SUMMARY

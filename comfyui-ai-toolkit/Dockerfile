@@ -10,30 +10,14 @@ LABEL org.opencontainers.image.source="https://github.com/vastai/"
 LABEL org.opencontainers.image.description="Combined ComfyUI and AI-Toolkit image for Vast.ai"
 LABEL maintainer="Custom build"
 
-# ============================================================
-# Dependency Versions (all git clones pinned for reproducibility)
-# ============================================================
-# ComfyUI:         ${COMFYUI_REF}         (release tag)
-# ComfyUI-Manager: ${COMFYUI_MANAGER_REF} (release tag)
-# API Wrapper:     ${API_WRAPPER_REF}      (commit hash)
-# AI-Toolkit:      ${AI_TOOLKIT_REF}       (commit hash)
-# xformers:        unpinned (binary-matched to torch via --torch-backend)
-# sageattention:   1.0.6
-# timm:            1.0.22
-# Base image:      vastai/pytorch:2.9.1-cu128-cuda-12.9-mini-py312
-
 # Copy Supervisor configuration and startup scripts
 COPY ./ROOT /
 
 # ============================================================
 # ComfyUI Installation
 # ============================================================
-ARG COMFYUI_REF=v0.3.0
-ARG COMFYUI_MANAGER_REF=4.0.5
-
 RUN \
     set -euo pipefail && \
-    [[ -n "${COMFYUI_REF}" ]] || { echo "Must specify COMFYUI_REF" && exit 1; } && \
     . /venv/main/bin/activate && \
     # We have PyTorch pre-installed so we will check at the end of the install that it has not been clobbered
     torch_version_pre="$(python -c 'import torch; print (torch.__version__)')" && \
@@ -43,7 +27,6 @@ RUN \
     cd /opt/workspace-internal/ && \
     git clone https://github.com/Comfy-Org/ComfyUI && \
     cd /opt/workspace-internal/ComfyUI && \
-    git checkout "${COMFYUI_REF}" && \
     uv pip install --no-cache-dir -r requirements.txt && \
     # Avoid Jupyter directory display bug
     cd /opt/workspace-internal/ComfyUI/models/ && \
@@ -51,9 +34,6 @@ RUN \
     # Install ComfyUI-Manager
     cd /opt/workspace-internal/ComfyUI/custom_nodes && \
     git clone https://github.com/Comfy-Org/ComfyUI-Manager && \
-    cd ComfyUI-Manager && \
-    git checkout "${COMFYUI_MANAGER_REF}" && \
-    cd .. && \
     uv pip install --no-cache-dir -r ComfyUI-Manager/requirements.txt && \
     # Quick startup test in CPU mode
     cd /opt/workspace-internal/ComfyUI && \
@@ -74,8 +54,6 @@ ENV COMFYUI_ARGS="--disable-auto-launch --enable-cors-header --port 18188"
 # ============================================================
 # ComfyUI API Wrapper Installation
 # ============================================================
-ARG API_WRAPPER_REF=5b6a181
-
 RUN \
     set -euo pipefail && \
     apt-get update && \
@@ -83,7 +61,6 @@ RUN \
     cd /opt && \
     git clone https://github.com/ai-dock/comfyui-api-wrapper && \
     cd comfyui-api-wrapper && \
-    git checkout "${API_WRAPPER_REF}" && \
     uv venv -p 3.12 && \
     . .venv/bin/activate && \
     uv pip install -r requirements.txt && \
@@ -94,21 +71,15 @@ RUN \
 # ============================================================
 # AI-Toolkit Installation
 # ============================================================
-ARG AI_TOOLKIT_REPO=https://github.com/ostris/ai-toolkit
-ARG AI_TOOLKIT_REF=6870ab4
-
 RUN \
     set -euo pipefail && \
-    [[ -n "${AI_TOOLKIT_REF}" ]] || { echo "Must specify AI_TOOLKIT_REF"; exit 1; } && \
     . /venv/main/bin/activate && \
     . /opt/nvm/nvm.sh && \
     # Record PyTorch version before install
     torch_version_pre="$(python -c 'import torch; print (torch.__version__)')" && \
     cd /opt/workspace-internal && \
-    git clone "${AI_TOOLKIT_REPO}" && \
+    git clone https://github.com/ostris/ai-toolkit && \
     cd ai-toolkit && \
-    git checkout "${AI_TOOLKIT_REF}" && \
-    # Fix known issue with toolkit 6870ab4 - pin timm before requirements install
     uv pip install --no-cache-dir timm==1.0.22 && \
     uv pip install --no-cache-dir -r requirements.txt && \
     # Build Node.js UI
