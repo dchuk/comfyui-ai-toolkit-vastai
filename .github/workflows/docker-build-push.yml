@@ -10,7 +10,20 @@ on:
   workflow_dispatch:
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run shellcheck on shell scripts
+        run: find comfyui-ai-toolkit -name '*.sh' -exec shellcheck -S warning {} +
+
+      - name: Run hadolint on Dockerfile
+        run: docker run --rm -i -v "$PWD/.hadolint.yaml:/.config/hadolint.yaml" hadolint/hadolint < comfyui-ai-toolkit/Dockerfile
+
   build-and-push:
+    needs: [lint]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
