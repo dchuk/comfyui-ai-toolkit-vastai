@@ -57,7 +57,7 @@ if [[ -d "$COMFYUI_DIR" ]]; then
     if [[ -n "$comfyui_target" ]]; then
         if safe_git_update "$COMFYUI_DIR" "$comfyui_target" 2>&1; then
             comfyui_new=$(git -C "$COMFYUI_DIR" describe --tags --always 2>/dev/null || echo "$comfyui_target")
-            cd "$COMFYUI_DIR"
+            cd "$COMFYUI_DIR" || return
             if uv pip --no-cache-dir install -r requirements.txt 2>&1; then
                 # Validate PyTorch after pip install
                 if [[ -n "$torch_pre" ]]; then
@@ -104,7 +104,7 @@ if [[ -d "$AI_TOOLKIT_DIR" ]]; then
 
     if safe_git_update "$AI_TOOLKIT_DIR" "$aitoolkit_target" 2>&1; then
         aitoolkit_new=$(git -C "$AI_TOOLKIT_DIR" rev-parse --short HEAD 2>/dev/null || echo "$aitoolkit_target")
-        cd "$AI_TOOLKIT_DIR"
+        cd "$AI_TOOLKIT_DIR" || return
 
         # Pin timm before requirements install (known compat issue)
         if uv pip --no-cache-dir install timm==1.0.22 2>&1 && \
