@@ -22,12 +22,33 @@ jobs:
       - name: Run hadolint on Dockerfile
         run: docker run --rm -i -v "$PWD/.hadolint.yaml:/.config/hadolint.yaml" hadolint/hadolint < comfyui-ai-toolkit/Dockerfile
 
-  build-and-push:
+  preflight:
     needs: [lint]
+    runs-on: ubuntu-latest
+    outputs:
+      secrets-available: ${{ steps.check-secrets.outputs.available }}
+    steps:
+      - name: Check for required secrets
+        id: check-secrets
+        run: |
+          if [[ -n "${{ secrets.DOCKERHUB_USERNAME }}" && -n "${{ secrets.DOCKERHUB_TOKEN }}" && -n "${{ secrets.DOCKERHUB_NAMESPACE }}" ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "✓ Required secrets configured"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping build — Docker Hub secrets not configured"
+          fi
+
+  build-and-push:
+    needs: [lint, preflight]
+    if: needs.preflight.outputs.secrets-available == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Maximize build space
+        uses: ./.github/actions/maximize-build-space
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -46,8 +67,8 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: |
-            dchuk/comfyui-ai-toolkit:latest
-            dchuk/comfyui-ai-toolkit:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_NAMESPACE }}/comfyui-ai-toolkit:latest
+            ${{ secrets.DOCKERHUB_NAMESPACE }}/comfyui-ai-toolkit:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -55,7 +76,7 @@ jobs:
         run: |
           echo "## Docker Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image:** \`dchuk/comfyui-ai-toolkit\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ secrets.DOCKERHUB_NAMESPACE }}/comfyui-ai-toolkit\`" >> $GITHUB_STEP_SUMMARY
           echo "**Tags:** \`latest\`, \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "**Platform:** \`linux/amd64\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
