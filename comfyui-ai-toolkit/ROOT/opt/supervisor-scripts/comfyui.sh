@@ -17,7 +17,7 @@ COMFYUI_DIR=${WORKSPACE}/ComfyUI
 
 # Not first boot - Do this to handle frontend being out of sync after manager update
 if [[ ! -f /.provisioning ]]; then
-    cd "${COMFYUI_DIR}"
+    cd "${COMFYUI_DIR}" || exit
     uv pip --no-cache-dir install -r requirements.txt
 fi
 
@@ -30,7 +30,9 @@ done
 COMFYUI_ARGS=${COMFYUI_ARGS:---disable-auto-launch --port 18188 --enable-cors-header}
 
 # Launch ComfyUI
-cd "${COMFYUI_DIR}"
+cd "${COMFYUI_DIR}" || exit
+# Intentional word-splitting: COMFYUI_ARGS must expand to multiple CLI args
+# shellcheck disable=SC2086
 LD_PRELOAD=libtcmalloc_minimal.so.4 \
         python main.py \
         ${COMFYUI_ARGS} 2>&1

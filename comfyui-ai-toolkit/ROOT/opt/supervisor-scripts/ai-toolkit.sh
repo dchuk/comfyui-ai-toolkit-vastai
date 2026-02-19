@@ -12,7 +12,7 @@ utils=/opt/supervisor-scripts/utils
 
 # Not first boot — reinstall requirements to handle dependency drift after updates
 if [[ ! -f /.provisioning ]]; then
-    cd "${WORKSPACE}/ai-toolkit"
+    cd "${WORKSPACE}/ai-toolkit" || exit
     uv pip --no-cache-dir install timm==1.0.22
     uv pip --no-cache-dir install -r requirements.txt
 fi
@@ -24,5 +24,7 @@ while [ -f "/.provisioning" ]; do
 done
 
 echo "Starting AI Toolkit"
-cd "${WORKSPACE}/ai-toolkit/ui"
+cd "${WORKSPACE}/ai-toolkit/ui" || exit
+# Intentional word-splitting: AI_TOOLKIT_START_CMD must expand to command + args
+# shellcheck disable=SC2086
 ${AI_TOOLKIT_START_CMD:-npm run start} 2>&1

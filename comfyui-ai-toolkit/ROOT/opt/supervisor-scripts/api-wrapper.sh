@@ -17,7 +17,7 @@ while [ -f "/.provisioning" ]; do
 done
 
 # Launch ComfyUI API Wrapper
-cd /opt/comfyui-api-wrapper
+cd /opt/comfyui-api-wrapper || exit
 . .venv/bin/activate
 
 uvicorn main:app --port 18288 2>&1
