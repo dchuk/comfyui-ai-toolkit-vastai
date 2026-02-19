@@ -13,9 +13,6 @@ LABEL maintainer="Custom build"
 # Use bash for RUN commands (tells hadolint/shellcheck to apply bash rules, not POSIX sh)
 SHELL ["/bin/bash", "-c"]
 
-# Copy Supervisor configuration and startup scripts
-COPY ./ROOT /
-
 # ============================================================
 # ComfyUI Installation
 # ============================================================
@@ -128,6 +125,12 @@ ENV AUTO_UPDATE=true
 # Service names must match what exit_portal.sh looks for in each startup script
 # Template ports should be: 1111, 18188, 18288, 8675
 ENV PORTAL_CONFIG="localhost:1111:11111:/:Instance Portal|localhost:18188:18188:/:ComfyUI|localhost:18288:18288:/:API Wrapper|localhost:8675:8675:/:AI Toolkit"
+
+# ============================================================
+# Supervisor Configuration & Startup Scripts
+# ============================================================
+# Placed late so edits to scripts don't invalidate heavy install layers above
+COPY ./ROOT /
 
 # ============================================================
 # Finalize
