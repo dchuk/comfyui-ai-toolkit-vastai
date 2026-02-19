@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Auto-update utility functions
 # Sourced by boot scripts — no shebang
 
