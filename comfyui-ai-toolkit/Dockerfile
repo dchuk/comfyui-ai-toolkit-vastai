@@ -10,6 +10,9 @@ LABEL org.opencontainers.image.source="https://github.com/vastai/"
 LABEL org.opencontainers.image.description="Combined ComfyUI and AI-Toolkit image for Vast.ai"
 LABEL maintainer="Custom build"
 
+# Use bash for RUN commands (tells hadolint/shellcheck to apply bash rules, not POSIX sh)
+SHELL ["/bin/bash", "-c"]
+
 # Copy Supervisor configuration and startup scripts
 COPY ./ROOT /
 
