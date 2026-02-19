@@ -1,5 +1,9 @@
 #!/bin/bash
-set -euo pipefail
+# IMPORTANT: This script is SOURCED by boot_default.sh (not executed).
+# Do NOT use `set -euo pipefail` (it propagates to the parent shell and breaks
+# subsequent boot scripts). Do NOT use `exit` (it kills the parent shell and
+# prevents 95-supervisor-wait.sh from removing /.provisioning).
+# Use `return` instead of `exit`, and explicit error handling instead of set -e.
 
 # Structured log function with auto-update prefix
 log() { echo "[auto-update $(date +%H:%M:%S)] $*"; }
@@ -8,10 +12,10 @@ log() { echo "[auto-update $(date +%H:%M:%S)] $*"; }
 . /etc/environment 2>/dev/null || true
 . /opt/supervisor-scripts/utils/update.sh
 
-# Check master switch — exit early if updates disabled
+# Check master switch — return early if updates disabled
 if [[ "${AUTO_UPDATE:-true}" != "true" ]]; then
     log "Auto-update disabled (AUTO_UPDATE=${AUTO_UPDATE}), skipping"
-    exit 0
+    return 0 2>/dev/null || true
 fi
 
 log "Starting auto-update check..."
@@ -144,4 +148,4 @@ log "  ComfyUI:    ${comfyui_status} (${comfyui_old} -> ${comfyui_new})"
 log "  AI-Toolkit: ${aitoolkit_status} (${aitoolkit_old} -> ${aitoolkit_new})"
 log "========================================="
 
-exit 0
+return 0 2>/dev/null || true
