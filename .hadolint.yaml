@@ -1,3 +1,5 @@
 ignored:
   - DL3008  # apt-get install version pinning — ephemeral build, intentionally latest
   - DL3013  # pip install version pinning — using uv pip with intentional version strategy
+  - DL3003  # cd in multi-line RUN blocks is standard; WORKDIR doesn't apply mid-RUN
+  - SC3040  # pipefail is valid — Docker RUN uses /bin/bash, not POSIX sh

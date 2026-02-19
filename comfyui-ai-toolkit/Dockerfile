@@ -47,7 +47,7 @@ RUN \
     mkdir -p /opt/workspace-internal/ComfyUI/user/default/ComfyUI-Manager/components && \
     # Verify PyTorch version is unaltered
     torch_version_post="$(python -c 'import torch; print (torch.__version__)')" && \
-    [[ $torch_version_pre = $torch_version_post ]] || { echo "PyTorch version mismatch (wanted ${torch_version_pre} but got ${torch_version_post})"; exit 1; }
+    [[ "$torch_version_pre" = "$torch_version_post" ]] || { echo "PyTorch version mismatch (wanted ${torch_version_pre} but got ${torch_version_post})"; exit 1; }
 
 ENV COMFYUI_ARGS="--disable-auto-launch --enable-cors-header --port 18188"
 
@@ -89,7 +89,7 @@ RUN \
     npm run build && \
     # Verify PyTorch version is unaltered
     torch_version_post="$(python -c 'import torch; print (torch.__version__)')" && \
-    [[ $torch_version_pre = $torch_version_post ]] || { echo "PyTorch version mismatch (wanted ${torch_version_pre} but got ${torch_version_post})"; exit 1; }
+    [[ "$torch_version_pre" = "$torch_version_post" ]] || { echo "PyTorch version mismatch (wanted ${torch_version_pre} but got ${torch_version_post})"; exit 1; }
 
 # ============================================================
 # Auto-Update Configuration
