@@ -100,6 +100,19 @@ RUN \
 ENV AUTO_UPDATE=true
 
 # ============================================================
+# SSH Server
+# ============================================================
+# The "mini" base image lacks openssh-server, and entrypoint/args launch mode
+# does not get VastAI's injected sshd. Install it so our supervisor-managed
+# sshd (supervisor-scripts/sshd.sh) can run for remote access/debugging.
+RUN \
+    set -euo pipefail && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends openssh-server && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# ============================================================
 # Optional: Include SD 1.5 model for testing/benchmarking
 # Uncomment if needed - adds ~2GB to image size
 # ============================================================
