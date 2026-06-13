@@ -63,3 +63,68 @@ def test_ls_empty(monkeypatch):
 
     assert result.exit_code == 0
     assert "no instances" in result.output
+
+
+def test_pull_dry_run_plans_rsync(monkeypatch, tmp_path):
+    fake = FakeRunner({("show", "instances"): [instance_raw(id=42, label="vast:train:box")]})
+    monkeypatch.setattr(vastai, "run", fake)
+    key = tmp_path / "id_ed25519"
+    key.write_text("KEY")
+
+    result = cli.invoke(
+        main.app,
+        ["pull", "box", "--dry-run", "--ssh-key", str(key), "--dest", str(tmp_path / "bk")],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "rsync" in result.output
+    # both default targets planned, pointed at the resolved instance's port-22 host
+    assert "root@70.69.192.6:/workspace/ai-toolkit/output/" in result.output
+    assert "root@70.69.192.6:/workspace/ai-toolkit/datasets/" in result.output
+
+
+def test_pull_interactive_select_loras(monkeypatch, tmp_path):
+    fake = FakeRunner({("show", "instances"): [instance_raw(id=42, label="vast:train:box")]})
+    monkeypatch.setattr(vastai, "run", fake)
+    monkeypatch.setattr(main, "_stdin_is_tty", lambda: True)  # force the prompt
+    key = tmp_path / "id_ed25519"
+    key.write_text("KEY")
+
+    # answer the loras/datasets/both prompt with "loras"
+    result = cli.invoke(
+        main.app,
+        ["pull", "box", "--dry-run", "--ssh-key", str(key), "--dest", str(tmp_path / "bk")],
+        input="loras\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "/workspace/ai-toolkit/output/" in result.output
+    assert "/workspace/ai-toolkit/datasets/" not in result.output
+
+
+def test_pull_explicit_flag_skips_prompt(monkeypatch, tmp_path):
+    fake = FakeRunner({("show", "instances"): [instance_raw(id=42, label="vast:train:box")]})
+    monkeypatch.setattr(vastai, "run", fake)
+    monkeypatch.setattr(main, "_stdin_is_tty", lambda: True)
+    key = tmp_path / "id_ed25519"
+    key.write_text("KEY")
+
+    # --no-datasets is explicit -> no prompt -> no EOF on empty input
+    result = cli.invoke(
+        main.app,
+        ["pull", "box", "--no-datasets", "--dry-run", "--ssh-key", str(key), "--dest", str(tmp_path / "bk")],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "/workspace/ai-toolkit/output/" in result.output
+    assert "/workspace/ai-toolkit/datasets/" not in result.output
+
+
+def test_pull_nothing_selected_fails(monkeypatch, tmp_path):
+    fake = FakeRunner({("show", "instances"): [instance_raw(id=42, label="vast:train:box")]})
+    monkeypatch.setattr(vastai, "run", fake)
+
+    result = cli.invoke(main.app, ["pull", "box", "--no-outputs", "--no-datasets"])
+
+    assert result.exit_code == 1
+    assert "nothing selected" in result.output

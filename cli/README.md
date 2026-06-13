@@ -60,10 +60,29 @@ vast logs my-box        # boot/service logs
 vast ssh my-box         # print the ssh command
 vast down my-box        # destroy (confirms unless --yes)
 
+# Back up training results before tearing a box down:
+vast pull my-box                  # prompts: loras / datasets / both -> ./vast-backups/my-box/
+vast pull my-box --no-datasets    # LoRAs only (explicit flag skips the prompt)
+vast pull my-box --dry-run        # show the rsync commands, transfer nothing
+vast pull my-box --db             # also grab the AI-Toolkit job DB + jobs/
+vast down my-box                  # ...then tear down once you've verified the files
+
 # Manage just the template:
 vast template sync flux
 vast template show
 ```
+
+## Backing up before teardown
+
+`vast pull <instance>` rsyncs AI-Toolkit's trained LoRAs
+(`/workspace/ai-toolkit/output`) and datasets (`/workspace/ai-toolkit/datasets`)
+down to `./vast-backups/<instance>/` over SSH, using the same key auto-detection
+as `vast up` (`~/.ssh/id_ed25519` then `id_rsa`, or `--ssh-key <path>`). Run with
+no target flag in a terminal and it prompts for **loras / datasets / both**;
+pass `--outputs/--no-outputs`, `--datasets/--no-datasets`, or `--db` to choose
+non-interactively (and skip the prompt). Transfers are incremental, so re-running
+only fetches what changed. It never destroys anything — verify the download, then
+`vast down` to stop paying for the GPU.
 
 ## Profiles
 

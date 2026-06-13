@@ -1,1 +1,4 @@
 .vbw-planning/
+
+# Datasets/LoRAs downloaded from instances via `vast pull` — never commit these.
+vast-backups/

@@ -51,6 +51,7 @@ def flux_profile() -> Profile:
 #: against a stopped instance (ports=null); the running shape below should be
 #: re-validated against a live instance the first time one is launched.
 RUNNING_PORTS = {
+    "22/tcp": [{"HostIp": "0.0.0.0", "HostPort": "41000"}],
     "1111/tcp": [{"HostIp": "0.0.0.0", "HostPort": "41004"}],
     "18188/tcp": [{"HostIp": "0.0.0.0", "HostPort": "41001"}],
     "18288/tcp": [{"HostIp": "0.0.0.0", "HostPort": "41002"}],

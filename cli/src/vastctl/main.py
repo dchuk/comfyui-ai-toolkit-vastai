@@ -10,7 +10,7 @@ from typing import Optional
 
 import typer
 
-from . import instances, offers, profiles, readiness, template, vastai
+from . import instances, offers, profiles, readiness, template, transfer, vastai
 from .errors import ReadinessTimeout, VastError
 from .models import DEFAULT_TEMPLATE_NAME, Profile
 
@@ -28,6 +28,11 @@ def _fail(msg: str) -> "typer.Exit":
     return typer.Exit(code=1)
 
 
+def _stdin_is_tty() -> bool:
+    """Whether we can prompt interactively (overridable in tests)."""
+    return sys.stdin.isatty()
+
+
 def _parse_env(pairs: list[str]) -> dict[str, str]:
     out: dict[str, str] = {}
     for item in pairs:
@@ -40,6 +45,8 @@ def _parse_env(pairs: list[str]) -> dict[str, str]:
 
 #: SSH public keys to auto-authorize, in preference order, when --ssh-key is unset.
 _DEFAULT_PUBKEYS = ("id_ed25519.pub", "id_rsa.pub")
+#: Private keys to use for SSH/rsync, in preference order, when --ssh-key is unset.
+_DEFAULT_PRIVKEYS = ("id_ed25519", "id_rsa")
 
 
 def _resolve_ssh_pubkey(ssh_key: Optional[str]) -> Optional[str]:
@@ -59,6 +66,28 @@ def _resolve_ssh_pubkey(ssh_key: Optional[str]) -> Optional[str]:
         if path.is_file():
             return path.read_text().strip()
     return None
+
+
+def _resolve_ssh_privkey(ssh_key: Optional[str]) -> str:
+    """Path to the SSH private key for rsync/ssh into an instance.
+
+    With an explicit path, that file is used (error if missing). Otherwise the
+    first existing ~/.ssh/<default> is used; errors if none are found.
+    """
+    if ssh_key:
+        path = Path(ssh_key).expanduser()
+        if not path.is_file():
+            raise typer.BadParameter(f"--ssh-key file not found: {path}")
+        return str(path)
+    ssh_dir = Path.home() / ".ssh"
+    for name in _DEFAULT_PRIVKEYS:
+        path = ssh_dir / name
+        if path.is_file():
+            return str(path)
+    raise VastError(
+        f"no SSH private key found in {ssh_dir} ({', '.join(_DEFAULT_PRIVKEYS)}). "
+        "Pass --ssh-key <path>."
+    )
 
 
 def _print_urls(inst) -> None:
@@ -234,6 +263,60 @@ def ssh(ref: str = typer.Argument(..., help="Instance id or label name.")) -> No
         typer.echo(instances.ssh_url(inst.id))
     except VastError as e:
         raise _fail(str(e))
+
+
+@app.command()
+def pull(
+    ctx: typer.Context,
+    ref: str = typer.Argument(..., help="Instance id or label name."),
+    outputs: bool = typer.Option(True, "--outputs/--no-outputs", help="Back up AI-Toolkit trained LoRAs."),
+    datasets: bool = typer.Option(True, "--datasets/--no-datasets", help="Back up AI-Toolkit training datasets."),
+    db: bool = typer.Option(False, "--db", help="Also back up the AI-Toolkit job DB + jobs/ state."),
+    dest: str = typer.Option("./vast-backups", "--dest", help="Local destination directory."),
+    ssh_key: Optional[str] = typer.Option(None, "--ssh-key", help="SSH private key (default: auto-detect ~/.ssh/id_ed25519|id_rsa)."),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Print the rsync commands, transfer nothing."),
+) -> None:
+    """Download AI-Toolkit outputs/datasets from an instance (rsync over SSH).
+
+    Back up trained LoRAs and datasets before you `vast down` an instance. Pulls
+    incrementally into <dest>/<instance>/, so re-running only fetches changes.
+
+    With no target flag on an interactive terminal, prompts for loras/datasets/both.
+    """
+    # No target flag given + interactive terminal -> ask what to download.
+    picked_target = any(
+        ctx.get_parameter_source(n).name != "DEFAULT" for n in ("outputs", "datasets", "db")
+    )
+    if not picked_target and _stdin_is_tty():
+        choice = typer.prompt("Download which? [loras/datasets/both]", default="both").strip().lower()
+        while choice not in ("loras", "datasets", "both"):
+            choice = typer.prompt("please enter loras, datasets, or both", default="both").strip().lower()
+        outputs = choice in ("loras", "both")
+        datasets = choice in ("datasets", "both")
+
+    selected = transfer.targets_for(outputs=outputs, datasets=datasets, db=db)
+    if not selected:
+        raise _fail("nothing selected — enable at least one of --outputs/--datasets/--db")
+    try:
+        inst = instances.resolve(ref)
+        key = _resolve_ssh_privkey(ssh_key)
+        planned = transfer.pull(
+            inst, key, selected, Path(dest).expanduser(), dry_run=dry_run
+        )
+    except VastError as e:
+        raise _fail(str(e))
+
+    if dry_run:
+        typer.secho("[dry-run] would run:", bold=True)
+        for argv in planned:
+            typer.echo("  " + shlex.join(argv))
+        return
+    label = (inst.label or "").split(":")[-1] or str(inst.id)
+    names = ", ".join(t.name for t in selected)
+    typer.secho(
+        f"backed up {names} → {Path(dest).expanduser() / label}", fg=typer.colors.GREEN
+    )
+    typer.echo(f"verify the files, then tear down with: vast down {ref}")
 
 
 # --------------------------------------------------------------- template subapp

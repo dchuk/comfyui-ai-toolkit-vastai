@@ -31,6 +31,12 @@ READINESS_PORT_INTERNAL: int = 18188
 #: Default VastAI template name (one per account; reused/updated, never duplicated).
 DEFAULT_TEMPLATE_NAME = "ComfyUI + AI-Toolkit"
 
+#: Remote AI-Toolkit paths the `pull` command backs up (on /workspace).
+AI_TOOLKIT_OUTPUT_DIR = "/workspace/ai-toolkit/output"      # trained LoRAs (per-job dirs)
+AI_TOOLKIT_DATASETS_DIR = "/workspace/ai-toolkit/datasets"  # uploaded training datasets
+#: Job-history DB + run state (opt-in via --db); restores the AI-Toolkit UI's jobs.
+AI_TOOLKIT_DB_PATHS = ("/workspace/ai-toolkit/aitk_db.db", "/workspace/ai-toolkit/jobs")
+
 
 @dataclass
 class Profile:
