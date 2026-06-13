@@ -5,6 +5,7 @@ from __future__ import annotations
 import shlex
 import sys
 import uuid
+from pathlib import Path
 from typing import Optional
 
 import typer
@@ -37,6 +38,29 @@ def _parse_env(pairs: list[str]) -> dict[str, str]:
     return out
 
 
+#: SSH public keys to auto-authorize, in preference order, when --ssh-key is unset.
+_DEFAULT_PUBKEYS = ("id_ed25519.pub", "id_rsa.pub")
+
+
+def _resolve_ssh_pubkey(ssh_key: Optional[str]) -> Optional[str]:
+    """Read the SSH public key to authorize on the instance.
+
+    With an explicit path, that file is used (error if unreadable). Otherwise the
+    first existing ~/.ssh/<default>.pub is used, or None if none exist.
+    """
+    if ssh_key:
+        path = Path(ssh_key).expanduser()
+        if not path.is_file():
+            raise typer.BadParameter(f"--ssh-key file not found: {path}")
+        return path.read_text().strip()
+    ssh_dir = Path.home() / ".ssh"
+    for name in _DEFAULT_PUBKEYS:
+        path = ssh_dir / name
+        if path.is_file():
+            return path.read_text().strip()
+    return None
+
+
 def _print_urls(inst) -> None:
     typer.secho(f"\ninstance {inst.id} ({inst.gpu_name}) — {inst.status}", bold=True)
     for svc in inst.service_urls():
@@ -63,6 +87,8 @@ def up(
     pin_ai_toolkit: Optional[str] = typer.Option(None, "--pin-ai-toolkit", help="AI_TOOLKIT_VERSION."),
     template_name: str = typer.Option(DEFAULT_TEMPLATE_NAME, "--template-name", help="Template name."),
     profiles_path: Optional[str] = typer.Option(None, "--profiles-path", help="Custom profiles.toml."),
+    ssh_key: Optional[str] = typer.Option(None, "--ssh-key", help="Public key file to authorize for SSH (default: auto-detect ~/.ssh/*.pub)."),
+    no_ssh_key: bool = typer.Option(False, "--no-ssh-key", help="Don't authorize any SSH key."),
     force: bool = typer.Option(False, "--force", help="Ignore the price ceiling."),
     no_wait: bool = typer.Option(False, "--no-wait", help="Don't wait for readiness."),
     dry_run: bool = typer.Option(False, "--dry-run", help="Print commands, mutate nothing."),
@@ -72,13 +98,18 @@ def up(
     try:
         if not dry_run:
             vastai.preflight()
+        env_overrides = _parse_env(env)
+        if not no_ssh_key and "SSH_PUBLIC_KEY" not in env_overrides:
+            pubkey = _resolve_ssh_pubkey(ssh_key)
+            if pubkey:
+                env_overrides["SSH_PUBLIC_KEY"] = pubkey
         overrides = profiles.Overrides(
             image=image,
             disk=disk,
             max_dph=max_dph,
             gpu_ram=gpu_ram,
             gpu_name=gpu_name,
-            env=_parse_env(env),
+            env=env_overrides,
             pin_comfyui=pin_comfyui,
             pin_ai_toolkit=pin_ai_toolkit,
         )
