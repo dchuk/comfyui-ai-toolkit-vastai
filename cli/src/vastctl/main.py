@@ -89,6 +89,7 @@ def up(
     profiles_path: Optional[str] = typer.Option(None, "--profiles-path", help="Custom profiles.toml."),
     ssh_key: Optional[str] = typer.Option(None, "--ssh-key", help="Public key file to authorize for SSH (default: auto-detect ~/.ssh/*.pub)."),
     no_ssh_key: bool = typer.Option(False, "--no-ssh-key", help="Don't authorize any SSH key."),
+    fastest: bool = typer.Option(False, "--fastest", help="Pick the highest-bandwidth offer (within budget) instead of the cheapest."),
     force: bool = typer.Option(False, "--force", help="Ignore the price ceiling."),
     no_wait: bool = typer.Option(False, "--no-wait", help="Don't wait for readiness."),
     dry_run: bool = typer.Option(False, "--dry-run", help="Print commands, mutate nothing."),
@@ -118,10 +119,11 @@ def up(
         template.ensure(prof, template_name, runner=runner)
 
         found = offers.search(prof, runner=runner)
-        offer = offers.pick(found, max_dph=None if force else prof.max_dph)
+        offer = offers.pick(found, max_dph=None if force else prof.max_dph, fastest=fastest)
         typer.echo(
             f"selected offer {offer.id}: {offer.gpu_name} {offer.gpu_ram_gb}GB "
-            f"@ ${offer.dph:.3f}/hr (reliability {offer.reliability:.3f})"
+            f"@ ${offer.dph:.3f}/hr ({offer.inet_down:.0f} Mbps down, "
+            f"reliability {offer.reliability:.3f})"
         )
 
         inst_name = name or f"{profile}-{uuid.uuid4().hex[:6]}"

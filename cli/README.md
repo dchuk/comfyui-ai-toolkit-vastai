@@ -48,6 +48,9 @@ vast up flux --dry-run
 # Cheaper SDXL box with a hard price ceiling:
 vast up sdxl --max-dph 0.30
 
+# Pick the highest-bandwidth host instead of the cheapest (faster image pull):
+vast up flux --gpu-name RTX_5090 --fastest
+
 # Pin versions / pass extra env:
 vast up flux --pin-comfyui v0.3.40 --env HF_TOKEN=hf_xxx
 
@@ -69,7 +72,11 @@ Use-case presets live in [`src/vastctl/profiles.toml`](src/vastctl/profiles.toml
 any value at the command line, or point at your own file with `--profiles-path`.
 
 Price is filtered client-side against each offer's `dph_total`, so the launcher
-always picks the genuinely cheapest offer within your `--max-dph` budget.
+always picks the genuinely cheapest offer within your `--max-dph` budget. Pass
+`--fastest` to instead select the highest internet-download-bandwidth offer
+within budget (ties broken by price, then reliability) — useful when a slow host
+makes the ~30 GB image pull crawl. The chosen offer's `inet_down` (Mbps) is shown
+in the selection line.
 
 ## Development
 

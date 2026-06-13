@@ -52,6 +52,7 @@ class Offer:
     gpu_ram_gb: float
     num_gpus: int
     reliability: float
+    inet_down: float  # internet download speed, Mbps
     raw: dict
 
     @classmethod
@@ -69,6 +70,7 @@ class Offer:
                 or d.get("expected_reliability")
                 or 0.0
             ),
+            inet_down=float(d.get("inet_down") or 0.0),
             raw=d,
         )
 

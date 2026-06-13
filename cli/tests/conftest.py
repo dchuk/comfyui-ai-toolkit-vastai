@@ -74,7 +74,13 @@ def instance_raw(**overrides) -> dict:
     return base
 
 
-def offer_raw(id_: int, dph: float, reliability: float = 0.99, gpu_ram_mb: int = 24576) -> dict:
+def offer_raw(
+    id_: int,
+    dph: float,
+    reliability: float = 0.99,
+    gpu_ram_mb: int = 24576,
+    inet_down: float = 1000.0,
+) -> dict:
     return {
         "id": id_,
         "dph_total": dph,
@@ -82,4 +88,5 @@ def offer_raw(id_: int, dph: float, reliability: float = 0.99, gpu_ram_mb: int =
         "gpu_ram": gpu_ram_mb,
         "num_gpus": 1,
         "reliability2": reliability,
+        "inet_down": inet_down,
     }

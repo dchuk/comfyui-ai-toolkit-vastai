@@ -18,8 +18,14 @@ def search(profile: Profile, runner=None) -> list[Offer]:
     return [Offer.from_raw(d) for d in data]
 
 
-def pick(offers: list[Offer], max_dph: float | None) -> Offer:
-    """Cheapest offer within budget; ties broken by higher reliability."""
+def pick(offers: list[Offer], max_dph: float | None, *, fastest: bool = False) -> Offer:
+    """Select an offer within budget.
+
+    Default strategy is cheapest (ties broken by higher reliability). With
+    ``fastest=True``, sort by internet download speed and take the fastest
+    (ties broken by lower price, then higher reliability) — still respecting
+    the ``max_dph`` budget so "fastest" never escapes the price ceiling.
+    """
     candidates = [o for o in offers if max_dph is None or o.dph <= max_dph]
     if not candidates:
         if offers and max_dph is not None:
@@ -32,4 +38,7 @@ def pick(offers: list[Offer], max_dph: float | None) -> Offer:
         raise NoOffersError(
             "no rentable offers matched the search. Loosen the profile/--gpu-ram filters."
         )
+    if fastest:
+        # Highest inet_down first; tie-break cheaper, then more reliable.
+        return min(candidates, key=lambda o: (-o.inet_down, o.dph, -o.reliability))
     return min(candidates, key=lambda o: (o.dph, -o.reliability))
