@@ -13,6 +13,18 @@ A Docker image combining [ComfyUI](https://github.com/Comfy-Org/ComfyUI) and [Os
 
 ## Quick Start
 
+The fastest path is the bundled **[`vast` CLI](../cli/README.md)** — it creates/updates the template, rents the cheapest matching GPU, waits until ComfyUI is reachable, and prints the service URLs, all in one command:
+
+```bash
+# from the repo root (requires the official vastai CLI, authenticated once via `vastai set api-key`)
+uvx --from ./cli vast up flux --name my-box      # profiles: sdxl / flux / train
+uvx --from ./cli vast up flux --dry-run          # preview the plan without spending money
+```
+
+Profiles, price ceilings (`--max-dph`), version pinning (`--pin-comfyui`), and lifecycle commands (`vast ls` / `logs` / `ssh` / `down`) are documented in **[`cli/README.md`](../cli/README.md)**.
+
+Prefer to set it up by hand? Follow the manual steps below.
+
 ### 1. Create a VastAI Template
 
 In the [VastAI template editor](https://cloud.vast.ai/templates):
@@ -23,15 +35,18 @@ In the [VastAI template editor](https://cloud.vast.ai/templates):
 | **Ports** | `1111/http 18188/http 18288/http 8675/http 22/tcp` |
 | **Disk** | 40 GB minimum (more for models) |
 
-Or via CLI:
+Or with the official `vastai` CLI directly:
 
 ```bash
 vastai create template \
   --name "ComfyUI + AI-Toolkit" \
   --image "dchuk/comfyui-ai-toolkit:latest" \
-  --disk 40 \
-  --ports "1111/http 18188/http 18288/http 8675/http 22/tcp"
+  --disk_space 40 \
+  --ssh --direct \
+  --env "-p 1111:1111 -p 18188:18188 -p 18288:18288 -p 8675:8675"
 ```
+
+> **Note:** `vastai create template` has no `--ports` flag. HTTP ports are declared as Docker `-p` mappings inside `--env`, and SSH (port 22) is enabled with `--ssh`. The `1111/http …` notation in the table above is for the web template editor.
 
 ### 2. Rent a GPU Instance
 

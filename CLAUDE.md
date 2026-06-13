@@ -46,6 +46,12 @@ These conventions are enforced during planning and verified during QA.
 - All supervisor output must go to /dev/stdout for VastAI logging compatibility
 - Build scripts use `set -eo pipefail` for error handling
 
+## Repository Layout
+
+- `comfyui-ai-toolkit/` — the Docker template (Dockerfile, supervisor configs, boot/startup scripts). See its `README.md`.
+- `base-image/` — vendored VastAI base image reference.
+- `cli/` — `vast`, a Python (Typer) CLI that wraps the official `vastai` CLI to launch this template: profiles (sdxl/flux/train), cheapest-offer selection, readiness polling, and lifecycle (`up`/`ls`/`down`/`logs`/`ssh`). Tests: `cd cli && uv run pytest`. See `cli/README.md`. A thin `/vast-up` slash command (`.claude/commands/vast-up.md`) is a front door to it.
+
 ## Commands
 
 Run /vbw:status for current progress.

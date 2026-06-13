@@ -1,0 +1,32 @@
+# Use-case profiles for `vast up <profile>`.
+# [defaults] is merged into every profile; a profile's own keys win.
+# Override any of these at the command line (--image/--disk/--max-dph/--gpu-ram/
+# --gpu-name/--env K=V), or point at your own file with --profiles-path.
+#
+# `search` is a raw vastai offer-search query. Price is filtered client-side by
+# max_dph (against each offer's dph_total), so it is intentionally NOT in `search`.
+# `gpu_ram` in the query is in GB.
+
+[defaults]
+image = "dchuk/comfyui-ai-toolkit:latest"
+disk = 50
+max_dph = 0.60
+
+[defaults.env]
+AUTO_UPDATE = "true"
+
+# SDXL / SD1.5 image generation — modest VRAM.
+[profiles.sdxl]
+search = "gpu_ram>=12 num_gpus=1 rentable==True reliability>0.98"
+disk = 50
+
+# FLUX image generation — needs more VRAM.
+[profiles.flux]
+search = "gpu_ram>=24 num_gpus=1 rentable==True reliability>0.98"
+disk = 60
+
+# LoRA / model training — VRAM + good download speed for datasets/models.
+[profiles.train]
+search = "gpu_ram>=24 num_gpus=1 inet_down>200 rentable==True reliability>0.98"
+disk = 80
+max_dph = 0.90
