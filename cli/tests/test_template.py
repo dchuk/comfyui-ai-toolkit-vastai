@@ -35,6 +35,7 @@ def test_build_env_has_ports_and_quoted_values():
     env = template.build_env(_profile())
     assert "-p 1111:1111" in env
     assert "-p 18188:18188" in env
+    assert "-p 8080:8080" in env  # Jupyter (Caddy proxies to internal 18080)
     assert "-e AUTO_UPDATE=true" in env
     # value with spaces must be quoted as one token
     assert '-e COMFYUI_ARGS="--port 18188 --enable-cors-header"' in env

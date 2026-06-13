@@ -13,13 +13,15 @@ from dataclasses import dataclass, field
 # --- Template runtime contract (see comfyui-ai-toolkit/README.md + Dockerfile) ---
 
 #: HTTP service ports that must be opened on the instance (22/ssh handled by --ssh).
-HTTP_PORTS: tuple[int, ...] = (1111, 18188, 18288, 8675)
+#: 8080 is Jupyter's externally-exposed port (Caddy proxies it to internal 18080).
+HTTP_PORTS: tuple[int, ...] = (1111, 18188, 18288, 8675, 8080)
 
-#: Service label -> internal container port, used to build access URLs.
+#: Service label -> externally-exposed container port, used to build access URLs.
 SERVICE_PORTS: dict[str, int] = {
     "ComfyUI": 18188,
     "API Wrapper": 18288,
     "AI Toolkit": 8675,
+    "Jupyter": 8080,
     "Instance Portal": 1111,
 }
 

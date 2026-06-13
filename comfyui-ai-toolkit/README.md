@@ -8,6 +8,7 @@ A Docker image combining [ComfyUI](https://github.com/Comfy-Org/ComfyUI) and [Os
 - **ComfyUI-Manager** — One-click custom node and model installer
 - **ComfyUI API Wrapper** — REST API for programmatic access
 - **AI-Toolkit** — LoRA/model training with web UI
+- **Jupyter** — Browser-based file manager, notebooks, and terminal (port 8080)
 - **Auto-Update** — Pulls latest releases on every instance boot
 - **xformers & SageAttention** — Optimized attention for both tools
 
@@ -34,7 +35,7 @@ In the [VastAI template editor](https://cloud.vast.ai/templates):
 | Field | Value |
 |-------|-------|
 | **Image** | `dchuk/comfyui-ai-toolkit:latest` |
-| **Ports** | `1111/http 18188/http 18288/http 8675/http 22/tcp` |
+| **Ports** | `1111/http 18188/http 18288/http 8675/http 8080/http 22/tcp` |
 | **Disk** | 40 GB minimum (more for models) |
 | **Launch Mode** | **Docker ENTRYPOINT / `args`** — *not* SSH or Jupyter |
 
@@ -71,6 +72,7 @@ Once the instance is running, click the portal buttons or use direct URLs:
 | ComfyUI | 18188 | Node-based image generation UI |
 | ComfyUI API | 18288 | REST API for ComfyUI |
 | AI-Toolkit | 8675 | LoRA training web UI |
+| Jupyter | 8080 | Browser file manager, notebooks, and terminal (proxied via Caddy on internal 18080) |
 
 ## Auto-Update System
 
