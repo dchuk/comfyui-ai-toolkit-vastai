@@ -14,6 +14,9 @@ max_dph = 0.60
 
 [defaults.env]
 AUTO_UPDATE = "true"
+# Make VastAI's blue "Open" button open the Instance Portal (1111), not SSH.
+# (Also baked into the image; set here so it works before an image rebuild.)
+OPEN_BUTTON_PORT = "1111"
 
 # SDXL / SD1.5 image generation — modest VRAM.
 [profiles.sdxl]
