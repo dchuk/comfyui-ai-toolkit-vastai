@@ -16,9 +16,11 @@ A Docker image combining [ComfyUI](https://github.com/Comfy-Org/ComfyUI) and [Os
 The fastest path is the bundled **[`vast` CLI](../cli/README.md)** — it creates/updates the template, rents the cheapest matching GPU, waits until ComfyUI is reachable, and prints the service URLs, all in one command:
 
 ```bash
-# from the repo root (requires the official vastai CLI, authenticated once via `vastai set api-key`)
-uvx --from ./cli vast up flux --name my-box      # profiles: sdxl / flux / train
-uvx --from ./cli vast up flux --dry-run          # preview the plan without spending money
+# one-time: install the `vast` command (requires the official vastai CLI, authenticated via `vastai set api-key`)
+uv tool install ./cli
+
+vast up flux --name my-box      # profiles: sdxl / flux / train
+vast up flux --dry-run          # preview the plan without spending money
 ```
 
 Profiles, price ceilings (`--max-dph`), version pinning (`--pin-comfyui`), and lifecycle commands (`vast ls` / `logs` / `ssh` / `down`) are documented in **[`cli/README.md`](../cli/README.md)**.

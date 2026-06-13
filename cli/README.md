@@ -15,14 +15,26 @@ vastai set api-key YOUR_API_KEY # one-time auth (see https://cloud.vast.ai/accou
 
 ## Install / run
 
-```bash
-# Run without installing (from the repo root):
-uvx --from ./cli vast --help
+Install `vast` onto your PATH (recommended — like the `vastai` CLI itself):
 
-# Or install as a tool:
-pipx install ./cli
+```bash
+uv tool install ./cli          # from the repo root; gives you a `vast` command
 vast --help
+
+# After changing the CLI source, refresh the installed copy:
+uv tool install ./cli --force --reinstall
 ```
+
+For active development you can run straight from source instead:
+
+```bash
+uv run --project cli vast --help
+```
+
+> **Avoid `uvx --from ./cli`** for this repo: uvx caches its build by package
+> version, and since this package stays at `0.1.0` during development, uvx will
+> keep running a stale build and ignore your source changes. Use `uv tool
+> install` or `uv run --project cli` instead.
 
 ## Usage
 

@@ -1,7 +1,7 @@
 ---
 description: Launch the ComfyUI + AI-Toolkit template on VastAI via the vast CLI
 argument-hint: <profile> [--name X] [--max-dph 0.30] [--dry-run] [extra vast up flags]
-allowed-tools: Bash(uvx --from ./cli vast*), Bash(cd*)
+allowed-tools: Bash(vast*), Bash(uv run --project cli vast*), Bash(cd*)
 ---
 
 Launch (or plan) a VastAI instance of this repo's ComfyUI + AI-Toolkit template
@@ -14,11 +14,15 @@ followed by flags such as `--name`, `--max-dph`, `--pin-comfyui`, `--dry-run`).
 
 Steps:
 
-1. From the repo root, run the CLI with the user's arguments:
+1. Run the installed CLI with the user's arguments:
 
    ```bash
-   uvx --from ./cli vast up $ARGUMENTS
+   vast up $ARGUMENTS
    ```
+
+   If `vast` is not on PATH, install it first with `uv tool install ./cli` (or
+   run from source with `uv run --project cli vast up $ARGUMENTS`). Do **not**
+   use `uvx --from ./cli` — it caches a stale build for this unversioned package.
 
 2. If the user did not clearly intend a real (paid) launch, prefer adding
    `--dry-run` first and show them the planned `vastai` commands before doing a
