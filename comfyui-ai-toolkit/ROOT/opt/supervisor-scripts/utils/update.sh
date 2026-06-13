@@ -53,9 +53,15 @@ safe_git_update() {
         return 1
     fi
 
-    if ! git -C "$dir" checkout "$ref" 2>&1; then
-        echo "ERROR: git checkout ${ref} failed in ${dir}, rolling back to ${original_head}" >&2
-        git -C "$dir" checkout "$original_head" 2>/dev/null
+    # Use `reset --hard` rather than `checkout`: the workspace checkout often has
+    # local modifications to tracked files (editable pip installs, UI builds),
+    # which make a plain `git checkout <ref>` fail with "local changes would be
+    # overwritten" — that was silently leaving AI-Toolkit pinned to its stale
+    # baked-in revision. reset --hard forces the working tree to the target ref;
+    # untracked user data (models/, output/) is left untouched.
+    if ! git -C "$dir" reset --hard "$ref" 2>&1; then
+        echo "ERROR: git reset --hard ${ref} failed in ${dir}, rolling back to ${original_head}" >&2
+        git -C "$dir" reset --hard "$original_head" 2>/dev/null
         return 1
     fi
 
