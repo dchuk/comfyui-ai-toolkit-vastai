@@ -36,19 +36,19 @@ In the [VastAI template editor](https://cloud.vast.ai/templates):
 | **Image** | `dchuk/comfyui-ai-toolkit:latest` |
 | **Ports** | `1111/http 18188/http 18288/http 8675/http 22/tcp` |
 | **Disk** | 40 GB minimum (more for models) |
+| **Launch Mode** | **Docker ENTRYPOINT / `args`** — *not* SSH or Jupyter |
 
-Or with the official `vastai` CLI directly:
-
-```bash
-vastai create template \
-  --name "ComfyUI + AI-Toolkit" \
-  --image "dchuk/comfyui-ai-toolkit:latest" \
-  --disk_space 40 \
-  --ssh --direct \
-  --env "-p 1111:1111 -p 18188:18188 -p 18288:18288 -p 8675:8675"
-```
-
-> **Note:** `vastai create template` has no `--ports` flag. HTTP ports are declared as Docker `-p` mappings inside `--env`, and SSH (port 22) is enabled with `--ssh`. The `1111/http …` notation in the table above is for the web template editor.
+> **Critical — launch mode:** this image manages its own services (supervisor →
+> Caddy, ComfyUI, API wrapper, AI-Toolkit) from its ENTRYPOINT, and provides SSH
+> itself. It **must** run in **entrypoint/args mode**. If you launch it as an
+> **SSH** (or Jupyter) instance, VastAI runs an ssh-only container and the web
+> services never start — the portal and ComfyUI URLs will refuse to connect.
+>
+> The VastAI console "RENT" button launches a template in SSH mode by default
+> and there's no template flag to change that, so **the bundled
+> [`vast` CLI](../cli/README.md) is the reliable way to launch this image** — it
+> forces entrypoint/args mode (and authorizes your SSH key automatically). Use
+> the manual console path only if you set the launch mode to ENTRYPOINT yourself.
 
 ### 2. Rent a GPU Instance
 
