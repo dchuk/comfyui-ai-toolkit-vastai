@@ -20,7 +20,9 @@ def build_env(profile: Profile) -> str:
     Values containing spaces are double-quoted so vastai parses them as one
     token (e.g. COMFYUI_ARGS).
     """
-    parts = [f"-p {port}:{port}" for port in HTTP_PORTS]
+    # Map SSH (22) plus the HTTP service ports. In args/entrypoint launch mode
+    # VastAI does not inject its own SSH, so we expose 22 for the image's sshd.
+    parts = ["-p 22:22"] + [f"-p {port}:{port}" for port in HTTP_PORTS]
     for key, value in profile.env.items():
         parts.append(f"-e {key}={_quote(value)}")
     return " ".join(parts)
@@ -51,13 +53,14 @@ def ensure(profile: Profile, name: str, runner=None) -> str:
     """
     runner = runner or vastai.run
     env = build_env(profile)
+    # NOTE: no --ssh/--jupyter — this template is meant to run in entrypoint mode
+    # so the base image boots supervisor + all services. (The console "RENT"
+    # button can't force args mode; launch via `vast up`, which does.)
     config_args = [
         "--image",
         profile.image,
         "--disk_space",
         str(profile.disk),
-        "--ssh",
-        "--direct",
         "--env",
         env,
     ]

@@ -9,17 +9,28 @@ from vastctl.models import Instance
 
 def test_launch_labels_at_create_and_resolves_id(fake_runner, flux_profile):
     label = "vast:flux:box"
-    fake_runner.responses = {
-        ("create", "instance"): "",  # non-JSON confirmation, not parsed
-        ("show", "instances"): [instance_raw(id=909, label=label)],
-    }
+    # A stale instance already carries the same label; the new one must still be
+    # picked via the before/after id diff, not the stale match.
+    state = {"created": False}
+
+    def show(_args):
+        base = [instance_raw(id=100, label=label)]  # stale, pre-existing
+        return base + [instance_raw(id=909, label=label)] if state["created"] else base
+
+    def create(_args):
+        state["created"] = True
+        return ""
+
+    fake_runner.responses = {("create", "instance"): create, ("show", "instances"): show}
     new_id = instances.launch(123, flux_profile, label, runner=fake_runner, sleep=lambda s: None)
-    assert new_id == 909
+    assert new_id == 909  # the new id, not the stale 100
     argv = fake_runner.planned("create", "instance")[0]
     assert "123" in argv  # offer id
     assert "--image" in argv and flux_profile.image in argv
-    assert "--ssh" in argv
     assert "--label" in argv and label in argv
+    # entrypoint/args launch mode (not ssh-only) so services actually start
+    assert "--ssh" not in argv
+    assert argv[-1] == "--args"
 
 
 def test_make_label_format():

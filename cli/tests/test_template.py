@@ -72,7 +72,8 @@ def test_ensure_creates_when_absent(fake_runner):
     assert hash_id == "NEWHASH"
     argv = fake_runner.planned("create", "template")[0]
     assert "--name" in argv and NAME in argv
-    assert "--ssh" in argv and "--direct" in argv
+    # entrypoint mode: no ssh-only runtype forced on the template
+    assert "--ssh" not in argv
 
 
 def test_ensure_updates_on_drift(fake_runner):

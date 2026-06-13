@@ -21,6 +21,14 @@ def launch(offer_id: int, profile: Profile, label: str, runner=None, sleep=time.
     """
     runner = runner or vastai.run
     env = template.build_env(profile)
+    # Snapshot existing ids first so we can identify the genuinely new instance
+    # afterwards — resolving purely by label would match a stale same-labelled
+    # instance from a previous launch.
+    before = {i.id for i in list_all(runner)}
+    # `--args` (must be last) selects args/entrypoint launch mode: VastAI runs the
+    # image as-is so the base ENTRYPOINT starts supervisor + all services. Using
+    # --ssh instead would launch an ssh-only container and the portal/ComfyUI/
+    # AI-Toolkit services would never start.
     runner(
         [
             "create",
@@ -32,29 +40,36 @@ def launch(offer_id: int, profile: Profile, label: str, runner=None, sleep=time.
             str(profile.disk),
             "--env",
             env,
-            "--ssh",
-            "--direct",
             "--label",
             label,
+            "--args",
         ],
         raw=False,
     )
     # Dry-run never actually creates the instance; don't poll for it.
     if isinstance(runner, vastai.DryRunner):
         return 0
-    inst = _find_by_label(label, runner, sleep=sleep)
+    inst = _find_new(before, label, runner, sleep=sleep)
     if inst is None:
         raise InstanceNotFoundError(
-            f"instance was launched but did not appear with label {label!r}; check `vast ls --all`"
+            f"instance was launched but did not appear as new; check `vast ls --all`"
         )
     return inst.id
 
 
-def _find_by_label(label: str, runner, attempts: int = 5, delay: float = 2.0, sleep=time.sleep):
+def _find_new(before: set[int], label: str, runner, attempts: int = 6, delay: float = 2.0, sleep=time.sleep):
+    """Find the instance created by the launch — an id not present before it.
+
+    Prefers a new instance carrying the expected label; falls back to any new
+    instance. Robust against stale instances reusing the same label.
+    """
     for i in range(attempts):
-        for inst in list_all(runner):
-            if inst.label == label:
-                return inst
+        new = [inst for inst in list_all(runner) if inst.id not in before]
+        labeled = [inst for inst in new if inst.label == label]
+        if labeled:
+            return labeled[0]
+        if new:
+            return new[0]
         if i < attempts - 1:
             sleep(delay)
     return None
@@ -100,8 +115,9 @@ def resolve(ref: str, runner=None) -> Instance:
 
 
 def destroy(instance_id: int, runner=None) -> None:
-    # mutating commands print a non-JSON confirmation; don't parse it.
-    (runner or vastai.run)(["destroy", "instance", str(instance_id)], raw=False)
+    # -y: `vastai destroy` prompts for confirmation otherwise (we confirm in the
+    # CLI layer). raw=False: it prints a non-JSON confirmation, don't parse it.
+    (runner or vastai.run)(["destroy", "instance", str(instance_id), "-y"], raw=False)
 
 
 def stop(instance_id: int, runner=None) -> None:
