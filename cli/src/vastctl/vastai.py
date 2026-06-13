@@ -54,6 +54,11 @@ def run(args: Sequence[str], raw: bool = True, timeout: int = 120) -> Any:
             f"vastai {' '.join(args)} failed (exit {proc.returncode}): {detail}"
         )
 
+    # vastai sometimes prints an API error to stdout while still exiting 0
+    # (e.g. `failed with error 400: ...`). Treat that as a failure too.
+    if proc.stdout.lstrip().startswith("failed with error"):
+        raise VastaiCLIError(f"vastai {' '.join(args)} failed: {proc.stdout.strip()}")
+
     if not raw:
         return proc.stdout
 
@@ -75,11 +80,13 @@ def run(args: Sequence[str], raw: bool = True, timeout: int = 120) -> Any:
 def preflight(runner=None) -> None:
     """Verify the CLI is installed and authenticated.
 
-    `vastai show user` requires a valid api-key, so it doubles as an auth check.
+    Uses `vastai show instances` (an auth-gated read that returns valid JSON in
+    CLI v0.5.0). `show user` is avoided — it is broken in 0.5.0 (sends a bad
+    `owner` param and returns a 400) and would falsely look like an auth failure.
     """
     runner = runner or run
     try:
-        runner(["show", "user"], raw=True)
+        runner(["show", "instances"], raw=True)
     except PreflightError:
         raise
     except VastaiCLIError as e:
