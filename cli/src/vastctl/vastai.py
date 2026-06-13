@@ -95,6 +95,20 @@ def preflight(runner=None) -> None:
         ) from e
 
 
+def current_user_id(runner=None) -> int:
+    """The authenticated account's numeric id (needed to find your own templates).
+
+    `search templates` only returns the public marketplace unless filtered by
+    `creator_id`, so we look up the id here. `show user` returns valid JSON on
+    CLI v1.x (it is the broken command on 0.5.0, but we require >=1.x).
+    """
+    runner = runner or run
+    user = runner(["show", "user"], raw=True)
+    if not isinstance(user, dict) or "id" not in user:
+        raise VastaiCLIError(f"could not read user id from `vastai show user`: {user!r}")
+    return int(user["id"])
+
+
 class DryRunner:
     """A runner that executes read-only commands for real but records mutating
     ones without running them, returning plausible stand-in data so the flow

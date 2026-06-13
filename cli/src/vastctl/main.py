@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import shlex
 import sys
+import uuid
 from typing import Optional
 
 import typer
@@ -92,8 +93,9 @@ def up(
             f"@ ${offer.dph:.3f}/hr (reliability {offer.reliability:.3f})"
         )
 
-        inst_id = instances.launch(offer.id, prof, runner=runner)
-        instances.label(inst_id, instances.make_label(profile, name, inst_id), runner=runner)
+        inst_name = name or f"{profile}-{uuid.uuid4().hex[:6]}"
+        label = instances.make_label(profile, inst_name)
+        inst_id = instances.launch(offer.id, prof, label, runner=runner)
     except VastError as e:
         raise _fail(str(e))
 

@@ -7,19 +7,23 @@ from vastctl.errors import InstanceNotFoundError
 from vastctl.models import Instance
 
 
-def test_launch_builds_argv_and_returns_id(fake_runner, flux_profile):
-    fake_runner.responses = {("create", "instance"): {"success": True, "new_contract": 909}}
-    new_id = instances.launch(123, flux_profile, runner=fake_runner)
+def test_launch_labels_at_create_and_resolves_id(fake_runner, flux_profile):
+    label = "vast:flux:box"
+    fake_runner.responses = {
+        ("create", "instance"): "",  # non-JSON confirmation, not parsed
+        ("show", "instances"): [instance_raw(id=909, label=label)],
+    }
+    new_id = instances.launch(123, flux_profile, label, runner=fake_runner, sleep=lambda s: None)
     assert new_id == 909
     argv = fake_runner.planned("create", "instance")[0]
     assert "123" in argv  # offer id
     assert "--image" in argv and flux_profile.image in argv
     assert "--ssh" in argv
+    assert "--label" in argv and label in argv
 
 
 def test_make_label_format():
-    assert instances.make_label("flux", "box", 5) == "vast:flux:box"
-    assert instances.make_label("flux", None, 5) == "vast:flux:5"
+    assert instances.make_label("flux", "box") == "vast:flux:box"
 
 
 def test_resolve_by_id(fake_runner):

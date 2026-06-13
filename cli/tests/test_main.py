@@ -9,24 +9,32 @@ cli = CliRunner()
 
 def test_up_dry_run_plans_without_mutating(monkeypatch):
     fake = FakeRunner(
-        {("search", "templates"): [], ("search", "offers"): [offer_raw(11, 0.20)]}
+        {
+            ("show", "user"): {"id": 7},
+            ("search", "templates"): [],
+            ("search", "offers"): [offer_raw(11, 0.20)],
+        }
     )
     monkeypatch.setattr(vastai, "run", fake)
 
     result = cli.invoke(main.app, ["up", "flux", "--dry-run", "--max-dph", "1.0"])
 
     assert result.exit_code == 0, result.output
-    # the plan is printed...
+    # the plan is printed, with the label folded into `create instance`...
     assert "vastai create template" in result.output
     assert "vastai create instance" in result.output
-    assert "vastai label instance" in result.output
+    assert "--label" in result.output
     # ...but no mutating command ever reached the real runner
-    assert all(c[0] == "search" for c in fake.calls)
+    assert all(c[0] in ("show", "search") for c in fake.calls)
 
 
 def test_up_refuses_over_budget(monkeypatch):
     fake = FakeRunner(
-        {("search", "templates"): [], ("search", "offers"): [offer_raw(11, 0.95)]}
+        {
+            ("show", "user"): {"id": 7},
+            ("search", "templates"): [],
+            ("search", "offers"): [offer_raw(11, 0.95)],
+        }
     )
     monkeypatch.setattr(vastai, "run", fake)
 

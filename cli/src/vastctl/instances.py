@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import time
+
 from . import template, vastai
 from .errors import InstanceNotFoundError
 from .models import Instance, Profile
@@ -10,11 +12,16 @@ from .models import Instance, Profile
 LABEL_PREFIX = "vast"
 
 
-def launch(offer_id: int, profile: Profile, runner=None) -> int:
-    """Create an instance on a specific offer with the template's image/env."""
+def launch(offer_id: int, profile: Profile, label: str, runner=None, sleep=time.sleep) -> int:
+    """Create an instance on a specific offer with the template's image/env.
+
+    The label is set at creation time (`--label`) so we can resolve the new
+    instance id by querying `show instances` — `create instance` prints a
+    non-JSON confirmation, so its stdout is not parsed.
+    """
     runner = runner or vastai.run
     env = template.build_env(profile)
-    res = runner(
+    runner(
         [
             "create",
             "instance",
@@ -27,18 +34,34 @@ def launch(offer_id: int, profile: Profile, runner=None) -> int:
             env,
             "--ssh",
             "--direct",
-        ]
+            "--label",
+            label,
+        ],
+        raw=False,
     )
-    return _new_instance_id(res)
+    # Dry-run never actually creates the instance; don't poll for it.
+    if isinstance(runner, vastai.DryRunner):
+        return 0
+    inst = _find_by_label(label, runner, sleep=sleep)
+    if inst is None:
+        raise InstanceNotFoundError(
+            f"instance was launched but did not appear with label {label!r}; check `vast ls --all`"
+        )
+    return inst.id
 
 
-def label(instance_id: int, text: str, runner=None) -> None:
-    runner = runner or vastai.run
-    runner(["label", "instance", str(instance_id), text])
+def _find_by_label(label: str, runner, attempts: int = 5, delay: float = 2.0, sleep=time.sleep):
+    for i in range(attempts):
+        for inst in list_all(runner):
+            if inst.label == label:
+                return inst
+        if i < attempts - 1:
+            sleep(delay)
+    return None
 
 
-def make_label(profile_name: str, name: str | None, instance_id: int) -> str:
-    return f"{LABEL_PREFIX}:{profile_name}:{name or instance_id}"
+def make_label(profile_name: str, name: str) -> str:
+    return f"{LABEL_PREFIX}:{profile_name}:{name}"
 
 
 def list_all(runner=None) -> list[Instance]:
@@ -77,15 +100,16 @@ def resolve(ref: str, runner=None) -> Instance:
 
 
 def destroy(instance_id: int, runner=None) -> None:
-    (runner or vastai.run)(["destroy", "instance", str(instance_id)])
+    # mutating commands print a non-JSON confirmation; don't parse it.
+    (runner or vastai.run)(["destroy", "instance", str(instance_id)], raw=False)
 
 
 def stop(instance_id: int, runner=None) -> None:
-    (runner or vastai.run)(["stop", "instance", str(instance_id)])
+    (runner or vastai.run)(["stop", "instance", str(instance_id)], raw=False)
 
 
 def start(instance_id: int, runner=None) -> None:
-    (runner or vastai.run)(["start", "instance", str(instance_id)])
+    (runner or vastai.run)(["start", "instance", str(instance_id)], raw=False)
 
 
 def logs(instance_id: int, runner=None) -> str:
@@ -95,11 +119,3 @@ def logs(instance_id: int, runner=None) -> str:
 
 def ssh_url(instance_id: int, runner=None) -> str:
     return (runner or vastai.run)(["ssh-url", str(instance_id)], raw=False).strip()
-
-
-def _new_instance_id(res) -> int:
-    if isinstance(res, dict):
-        for key in ("new_contract", "id", "instance_id"):
-            if res.get(key) is not None:
-                return int(res[key])
-    raise InstanceNotFoundError(f"could not read new instance id from vastai response: {res!r}")
