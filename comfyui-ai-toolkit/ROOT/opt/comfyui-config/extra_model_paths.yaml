@@ -1,0 +1,29 @@
+# Loaded by ComfyUI via --extra-model-paths-config (wired in comfyui.sh).
+# Makes a shared model tree and AI-Toolkit's trained LoRAs visible to ComfyUI
+# without duplicating files. These paths are ADDITIVE to ComfyUI's own
+# /workspace/ComfyUI/models/ tree. See the README "Shared model storage" section.
+
+# A shared tree any tool (or you) can drop base models into once. The boot hook
+# 60-shared-storage.sh creates these directories on /workspace.
+shared_models:
+    base_path: /workspace/models/
+    checkpoints: checkpoints/
+    loras: loras/
+    vae: vae/
+    text_encoders: |
+        text_encoders/
+        clip/
+    clip_vision: clip_vision/
+    diffusion_models: |
+        diffusion_models/
+        unet/
+    controlnet: controlnet/
+    upscale_models: upscale_models/
+    embeddings: embeddings/
+
+# Trained LoRAs written by AI-Toolkit land in /workspace/ai-toolkit/output/<job>/
+# and show up in ComfyUI's LoRA picker as <job-uuid>/<name>.safetensors.
+# Read-only sharing — ComfyUI reads them in place, nothing is copied.
+aitoolkit_output:
+    base_path: /workspace/ai-toolkit/
+    loras: output/

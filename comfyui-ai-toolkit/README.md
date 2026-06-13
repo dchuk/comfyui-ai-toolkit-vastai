@@ -99,6 +99,33 @@ Set these in the VastAI template's environment section, or pass them when creati
 4. Python dependencies are reinstalled and PyTorch version is validated
 5. On failure, the baked-in version keeps running — updates never block startup
 
+## Shared Model Storage
+
+ComfyUI and AI-Toolkit each manage models differently, so the template shares
+what it usefully can without duplicating files:
+
+- **Trained LoRAs appear in ComfyUI automatically.** AI-Toolkit writes LoRAs to
+  `/workspace/ai-toolkit/output/<job-id>/`, and ComfyUI is configured to read
+  that directory as a LoRA source. After a training run finishes, the LoRA shows
+  up in ComfyUI's LoRA loader as `<job-id>/<name>.safetensors` — no copy needed.
+- **A shared `/workspace/models/` tree.** Drop a base model into the matching
+  subdirectory once (e.g. `/workspace/models/checkpoints/`,
+  `/workspace/models/loras/`) and ComfyUI sees it there, in addition to its own
+  `/workspace/ComfyUI/models/` tree. To use the same file in an AI-Toolkit
+  training run, point that job's `name_or_path` at the file's path.
+- **HuggingFace cache persists.** `HF_HOME=/workspace/.hf_home` lives on the
+  instance volume, so base models AI-Toolkit pulls from HuggingFace are not
+  re-downloaded across restarts of the same instance.
+
+This is wired via ComfyUI's native `--extra-model-paths-config`
+(`/opt/comfyui-config/extra_model_paths.yaml`); the boot hook
+`60-shared-storage.sh` creates the `/workspace/models/` directories on first boot.
+
+**What is *not* de-duplicated:** base models for *training* vs *inference* are
+genuinely different artifacts — AI-Toolkit needs the multi-file HuggingFace
+diffusers repo, while ComfyUI needs a single-file safetensors checkpoint — so a
+model used for both will exist in both forms.
+
 ## Building from Source
 
 ### CI Pipeline (Recommended)
@@ -154,8 +181,13 @@ supervisorctl tail -f ai-toolkit
 
 ```
 /workspace/
+├── models/                   # SHARED model tree (visible to ComfyUI, see below)
+│   ├── checkpoints/  loras/  vae/  diffusion_models/  unet/
+│   ├── text_encoders/  clip/  clip_vision/  controlnet/
+│   └── upscale_models/  embeddings/
+├── .hf_home/                 # HuggingFace cache (HF_HOME) — AI-Toolkit base models
 ├── ComfyUI/                  # ComfyUI installation
-│   ├── models/               # Model storage
+│   ├── models/               # ComfyUI's own model tree (also read; additive to /workspace/models)
 │   │   ├── checkpoints/      # SD/FLUX/etc. models
 │   │   ├── loras/            # LoRA files
 │   │   ├── vae/              # VAE models
@@ -165,7 +197,8 @@ supervisorctl tail -f ai-toolkit
 │   │   └── ComfyUI-Manager/  # Pre-installed
 │   └── output/               # Generated images
 └── ai-toolkit/               # AI-Toolkit installation
-    ├── output/               # Trained models
+    ├── output/               # Trained LoRAs (per-job dirs) — also shown in ComfyUI
+    ├── datasets/             # Training datasets (uploaded via the UI)
     └── ui/                   # Web UI (Node.js)
 
 /opt/

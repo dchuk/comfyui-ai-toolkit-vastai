@@ -29,6 +29,13 @@ done
 
 COMFYUI_ARGS=${COMFYUI_ARGS:---disable-auto-launch --port 18188 --enable-cors-header}
 
+# Load the shared-model-paths config (shared /workspace/models tree + AI-Toolkit
+# LoRA outputs) unless the user already supplied their own --extra-model-paths-config.
+EXTRA_MODEL_PATHS=/opt/comfyui-config/extra_model_paths.yaml
+if [[ -f "${EXTRA_MODEL_PATHS}" && "${COMFYUI_ARGS}" != *"--extra-model-paths-config"* ]]; then
+    COMFYUI_ARGS="${COMFYUI_ARGS} --extra-model-paths-config ${EXTRA_MODEL_PATHS}"
+fi
+
 # Launch ComfyUI
 cd "${COMFYUI_DIR}" || exit
 # Intentional word-splitting: COMFYUI_ARGS must expand to multiple CLI args
