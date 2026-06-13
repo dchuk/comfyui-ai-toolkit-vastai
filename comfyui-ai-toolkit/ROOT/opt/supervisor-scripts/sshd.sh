@@ -9,7 +9,12 @@ utils=/opt/supervisor-scripts/utils
 # 47-authorize-ssh-key.sh (from the SSH_PUBLIC_KEY env var). Starts early (no
 # provisioning wait) so the instance is reachable for debugging while it boots.
 
+# sshd refuses to start if the privsep dir is group/world-writable (independent
+# of StrictModes). mkdir -p inherits the container umask (can be 0000 -> 0777),
+# so force the ownership/perms sshd requires.
 mkdir -p /run/sshd
+chown root:root /run/sshd
+chmod 0755 /run/sshd
 ssh-keygen -A   # generate any missing host keys
 
 echo "[sshd] starting on port 22 (key-based root login)"
