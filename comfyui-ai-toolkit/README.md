@@ -85,7 +85,7 @@ On every instance boot, the template automatically pulls the latest versions of 
 | `AUTO_UPDATE` | `true` | Set `false` to skip updates on boot |
 | `COMFYUI_VERSION` | _(empty)_ | Pin ComfyUI to a release tag (e.g., `v0.3.1`) |
 | `AI_TOOLKIT_VERSION` | _(empty)_ | Pin AI-Toolkit to a git ref (e.g., `6870ab4`) |
-| `COMFYUI_ARGS` | `--disable-auto-launch --enable-cors-header --port 18188 --enable-manager` | ComfyUI startup arguments (`--enable-manager` turns on ComfyUI-Manager) |
+| `COMFYUI_ARGS` | `--disable-auto-launch --enable-cors-header --port 18188 --enable-manager --enable-manager-legacy-ui` | ComfyUI startup arguments (`--enable-manager` turns on ComfyUI-Manager; `--enable-manager-legacy-ui` loads the classic UI with the full Model Manager) |
 | `AI_TOOLKIT_START_CMD` | `npm run start` | AI-Toolkit startup command |
 | `WORKSPACE` | `/workspace` | Shared workspace directory |
 
@@ -141,11 +141,16 @@ important to know on a remote rented box.
   onto the server (see *Manually* below).
 - **ComfyUI-Manager → Model Manager** downloads **to the server**. This is the
   official in-UI server-side path. Open the **Manager** (button in the top
-  toolbar), open **Model Manager**, search for a model, and click **Install** — it
-  downloads straight into `/workspace/ComfyUI/models/<type>/` on the persistent
-  volume. It covers models in the Manager's curated database; arbitrary
-  workflow-specific files it doesn't know about won't appear there (download those
-  manually).
+  toolbar), open **Install Models / Model Manager**, search for a model, and click
+  **Install** — it downloads straight into `/workspace/ComfyUI/models/<type>/` on
+  the persistent volume. It covers models in the Manager's curated database;
+  arbitrary workflow-specific files it doesn't know about won't appear there
+  (download those manually).
+
+  > The Model Manager only appears in the **classic** Manager UI, so the image
+  > launches ComfyUI with `--enable-manager-legacy-ui` (see `COMFYUI_ARGS`). The
+  > newer default Manager UI does not expose an arbitrary-model installer. Drop
+  > `--enable-manager-legacy-ui` from `COMFYUI_ARGS` if you prefer the new UI.
 
 The Model Manager (and Manager node installs) work out of the box because the
 image ships `network_mode = personal_cloud` with `security_level = normal` in

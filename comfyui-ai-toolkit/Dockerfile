@@ -64,7 +64,10 @@ RUN \
 # --enable-manager turns on ComfyUI's built-in ComfyUI-Manager (the comfyui-manager
 # package installed above). Without it, loading a workflow that references custom
 # nodes prompts the user to install the manager manually.
-ENV COMFYUI_ARGS="--disable-auto-launch --enable-cors-header --port 18188 --enable-manager"
+# --enable-manager-legacy-ui loads the classic Manager UI, which exposes the full
+# Model Manager (search + server-side Install + paste-a-URL) and Custom Nodes
+# Manager. The newer default UI does not surface an arbitrary-URL model installer.
+ENV COMFYUI_ARGS="--disable-auto-launch --enable-cors-header --port 18188 --enable-manager --enable-manager-legacy-ui"
 
 # ============================================================
 # ComfyUI API Wrapper Installation
