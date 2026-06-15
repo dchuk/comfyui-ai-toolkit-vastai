@@ -85,7 +85,7 @@ On every instance boot, the template automatically pulls the latest versions of 
 | `AUTO_UPDATE` | `true` | Set `false` to skip updates on boot |
 | `COMFYUI_VERSION` | _(empty)_ | Pin ComfyUI to a release tag (e.g., `v0.3.1`) |
 | `AI_TOOLKIT_VERSION` | _(empty)_ | Pin AI-Toolkit to a git ref (e.g., `6870ab4`) |
-| `COMFYUI_ARGS` | `--disable-auto-launch --enable-cors-header --port 18188` | ComfyUI startup arguments |
+| `COMFYUI_ARGS` | `--disable-auto-launch --enable-cors-header --port 18188 --enable-manager` | ComfyUI startup arguments (`--enable-manager` turns on ComfyUI-Manager) |
 | `AI_TOOLKIT_START_CMD` | `npm run start` | AI-Toolkit startup command |
 | `WORKSPACE` | `/workspace` | Shared workspace directory |
 
@@ -125,6 +125,67 @@ This is wired via ComfyUI's native `--extra-model-paths-config`
 genuinely different artifacts — AI-Toolkit needs the multi-file HuggingFace
 diffusers repo, while ComfyUI needs a single-file safetensors checkpoint — so a
 model used for both will exist in both forms.
+
+## Downloading models
+
+ComfyUI has two different "Download" buttons and **only one saves to the server** —
+important to know on a remote rented box.
+
+### Which button does what
+
+- **The native *Missing Models* panel** (the dialog that pops up when you open a
+  workflow referencing models you don't have) downloads **to your local
+  computer**, not the server. This is ComfyUI frontend behavior — it triggers a
+  browser download — so on a remote instance the file ends up on your laptop, not
+  the GPU box. Use this panel only to grab each model's **Copy URL**, then pull it
+  onto the server (see *Manually* below).
+- **ComfyUI-Manager → Model Manager** downloads **to the server**. This is the
+  official in-UI server-side path. Open the **Manager** (button in the top
+  toolbar), open **Model Manager**, search for a model, and click **Install** — it
+  downloads straight into `/workspace/ComfyUI/models/<type>/` on the persistent
+  volume. It covers models in the Manager's curated database; arbitrary
+  workflow-specific files it doesn't know about won't appear there (download those
+  manually).
+
+The Model Manager (and Manager node installs) work out of the box because the
+image ships `network_mode = personal_cloud` with `security_level = normal` in
+`/workspace/ComfyUI/user/__manager/config.ini`:
+
+- ComfyUI binds `127.0.0.1` and VastAI proxies external traffic to it. Without
+  `personal_cloud`, ComfyUI-Manager treats the proxied connection as an untrusted
+  remote and **blocks** server-side installs with a "this request is banned" or
+  "not allowed with this security level" error. `personal_cloud` is the documented
+  exception for self-hosted cloud GPUs.
+- `security_level` stays `normal`, so installing **arbitrary** git-URL or pip
+  packages is still gated (curated downloads from the Manager database are
+  allowed). Raise it to `normal-` or `weak` in that file only if you accept the
+  risk, then `supervisorctl restart comfyui`.
+- **Gated HuggingFace repos** (some FLUX / Ideogram weights) need auth. Launch
+  with a token so the downloader can reach them:
+  `vast up flux --env HF_TOKEN=hf_xxx`.
+
+### Manually (works for any model)
+
+The most reliable path for arbitrary workflow models: copy the URL from the
+*Missing Models* panel, then download it **on the server** into the shared
+`/workspace/models/` tree (or ComfyUI's own `/workspace/ComfyUI/models/`).
+ComfyUI picks it up after you **Refresh** the model lists — no restart needed.
+Run these from the **Jupyter terminal** (port 8080) or over SSH:
+
+```bash
+# on the instance — pick the dir matching the model type
+wget -P /workspace/models/diffusion_models/ "<paste Copy-URL here>"
+wget -P /workspace/models/loras/           "<url>"
+wget -P /workspace/models/vae/             "<url>"
+
+# gated HuggingFace repos (needs HF_TOKEN in the environment)
+hf download <repo> <file> --local-dir /workspace/models/text_encoders/
+
+# or push a local file up from your machine
+scp my-lora.safetensors root@<host>:/workspace/models/loras/   # host/port from `vast ssh <instance>`
+```
+
+See [Shared Model Storage](#shared-model-storage) above for the full layout.
 
 ## Building from Source
 
@@ -193,8 +254,8 @@ supervisorctl tail -f ai-toolkit
 │   │   ├── vae/              # VAE models
 │   │   ├── controlnet/       # ControlNet models
 │   │   └── ckpt -> checkpoints  # Symlink (Jupyter compat)
-│   ├── custom_nodes/
-│   │   └── ComfyUI-Manager/  # Pre-installed
+│   ├── custom_nodes/         # Your custom nodes (ComfyUI-Manager is a pip package, not here)
+│   ├── user/__manager/config.ini  # ComfyUI-Manager config (network_mode=personal_cloud)
 │   └── output/               # Generated images
 └── ai-toolkit/               # AI-Toolkit installation
     ├── output/               # Trained LoRAs (per-job dirs) — also shown in ComfyUI
