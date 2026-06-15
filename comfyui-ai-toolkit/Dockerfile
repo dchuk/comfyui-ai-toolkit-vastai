@@ -31,10 +31,13 @@ RUN \
     # Avoid Jupyter directory display bug
     cd /opt/workspace-internal/ComfyUI/models/ && \
     ln -s checkpoints ckpt && \
-    # Install ComfyUI-Manager
-    cd /opt/workspace-internal/ComfyUI/custom_nodes && \
-    git clone https://github.com/Comfy-Org/ComfyUI-Manager && \
-    uv pip install --no-cache-dir -r ComfyUI-Manager/requirements.txt && \
+    # Install ComfyUI-Manager. ComfyUI v0.24+ ships built-in manager support
+    # gated behind --enable-manager (see COMFYUI_ARGS below) and loads it from
+    # the `comfyui-manager` PyPI package rather than a custom_nodes clone. The
+    # package is only published as a prerelease, hence --pre. No -U: installing
+    # without upgrade keeps the torch/transformers pins from ComfyUI's
+    # requirements.txt above intact (a bare -U drags the whole ML stack forward).
+    uv pip install --no-cache-dir --pre comfyui-manager && \
     # Quick startup test in CPU mode
     cd /opt/workspace-internal/ComfyUI && \
     LD_PRELOAD=libtcmalloc_minimal.so.4 \
@@ -44,12 +47,14 @@ RUN \
             --port 11404 \
             --disable-auto-launch \
             --quick-test-for-ci && \
-    mkdir -p /opt/workspace-internal/ComfyUI/user/default/ComfyUI-Manager/components && \
     # Verify PyTorch version is unaltered
     torch_version_post="$(python -c 'import torch; print (torch.__version__)')" && \
     [[ "$torch_version_pre" = "$torch_version_post" ]] || { echo "PyTorch version mismatch (wanted ${torch_version_pre} but got ${torch_version_post})"; exit 1; }
 
-ENV COMFYUI_ARGS="--disable-auto-launch --enable-cors-header --port 18188"
+# --enable-manager turns on ComfyUI's built-in ComfyUI-Manager (the comfyui-manager
+# package installed above). Without it, loading a workflow that references custom
+# nodes prompts the user to install the manager manually.
+ENV COMFYUI_ARGS="--disable-auto-launch --enable-cors-header --port 18188 --enable-manager"
 
 # ============================================================
 # ComfyUI API Wrapper Installation

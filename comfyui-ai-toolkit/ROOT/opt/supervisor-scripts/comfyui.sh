@@ -27,7 +27,7 @@ while [ -f "/.provisioning" ]; do
     sleep 5
 done
 
-COMFYUI_ARGS=${COMFYUI_ARGS:---disable-auto-launch --port 18188 --enable-cors-header}
+COMFYUI_ARGS=${COMFYUI_ARGS:---disable-auto-launch --port 18188 --enable-cors-header --enable-manager}
 
 # Load the shared-model-paths config (shared /workspace/models tree + AI-Toolkit
 # LoRA outputs) unless the user already supplied their own --extra-model-paths-config.
