@@ -38,6 +38,16 @@ RUN \
     # without upgrade keeps the torch/transformers pins from ComfyUI's
     # requirements.txt above intact (a bare -U drags the whole ML stack forward).
     uv pip install --no-cache-dir --pre comfyui-manager && \
+    # Seed ComfyUI-Manager config. network_mode=personal_cloud authorizes model
+    # downloads and curated node installs from the Manager UI. ComfyUI binds
+    # loopback and VastAI proxies external traffic to it, so without this the
+    # Manager sees the proxied client IPs as untrusted remotes and blocks installs
+    # ("This request is banned" / security_level errors). security_level stays
+    # "normal" so arbitrary git-url / pip installs remain gated. read_config()
+    # preserves these keys and fills the rest with defaults on first run.
+    mkdir -p /opt/workspace-internal/ComfyUI/user/__manager && \
+    printf '[default]\nsecurity_level = normal\nnetwork_mode = personal_cloud\n' \
+        > /opt/workspace-internal/ComfyUI/user/__manager/config.ini && \
     # Quick startup test in CPU mode
     cd /opt/workspace-internal/ComfyUI && \
     LD_PRELOAD=libtcmalloc_minimal.so.4 \
