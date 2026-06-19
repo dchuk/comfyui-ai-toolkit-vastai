@@ -35,7 +35,7 @@ In the [VastAI template editor](https://cloud.vast.ai/templates):
 | Field | Value |
 |-------|-------|
 | **Image** | `dchuk/comfyui-ai-toolkit:latest` |
-| **Ports** | `1111/http 18188/http 18288/http 8675/http 8080/http 22/tcp` |
+| **Ports** | `1111/http 18189/http 18288/http 8675/http 8080/http 22/tcp` |
 | **Disk** | 40 GB minimum (more for models) |
 | **Launch Mode** | **Docker ENTRYPOINT / `args`** — *not* SSH or Jupyter |
 
@@ -69,10 +69,31 @@ Once the instance is running, click the portal buttons or use direct URLs:
 | Service | Port | Description |
 |---------|------|-------------|
 | Instance Portal | 1111 | VastAI dashboard with service buttons |
-| ComfyUI | 18188 | Node-based image generation UI |
+| ComfyUI | 18189 | Node-based image generation UI (auth-proxied via Caddy to internal 18188) |
 | ComfyUI API | 18288 | REST API for ComfyUI |
 | AI-Toolkit | 8675 | LoRA training web UI |
 | Jupyter | 8080 | Browser file manager, notebooks, and terminal (proxied via Caddy on internal 18080) |
+
+### Access & authentication
+
+The Instance Portal (1111) and the **ComfyUI** tile (18189) are served **through
+the portal's Caddy**, which protects them with the portal's auth stack: HTTP
+**basic auth** (username `vastai`) plus token / cookie / bearer auth. Opening a
+service from the portal's blue **Open** button passes a one-time `?token=`, which
+sets an auth cookie — so you're logged in seamlessly and never see a password
+prompt. Hitting a service URL **directly** (e.g. bookmarking the ComfyUI URL)
+triggers the basic-auth prompt instead.
+
+- **Why ComfyUI is proxied:** ComfyUI binds loopback (`127.0.0.1:18188`), so it
+  has no usable direct Vast port and would otherwise be reachable only through a
+  flaky cloudflare quick-tunnel. Exposing it on **18189** with Caddy in front
+  gives it a **stable, authenticated** URL. ComfyUI is never bound to a public
+  interface.
+- **Password:** defaults to the per-instance `OPEN_BUTTON_TOKEN` (auto-generated
+  by VastAI). Set `WEB_PASSWORD` (and optionally `WEB_USERNAME`) as instance env
+  to choose your own credentials for direct access.
+- **Opt out:** set `AUTH_EXCLUDE=18189` (comma-separated port list) to serve
+  ComfyUI without auth.
 
 ## Auto-Update System
 
@@ -87,6 +108,9 @@ On every instance boot, the template automatically pulls the latest versions of 
 | `AI_TOOLKIT_VERSION` | _(empty)_ | Pin AI-Toolkit to a git ref (e.g., `6870ab4`) |
 | `COMFYUI_ARGS` | `--disable-auto-launch --enable-cors-header --port 18188 --enable-manager --enable-manager-legacy-ui` | ComfyUI startup arguments (`--enable-manager` turns on ComfyUI-Manager; `--enable-manager-legacy-ui` loads the classic UI with the full Model Manager) |
 | `AI_TOOLKIT_START_CMD` | `npm run start` | AI-Toolkit startup command |
+| `WEB_USERNAME` | `vastai` | Basic-auth username for Caddy-proxied services (portal, ComfyUI) |
+| `WEB_PASSWORD` | _(per-instance token)_ | Basic-auth password; defaults to the auto-generated `OPEN_BUTTON_TOKEN`. Set to choose your own |
+| `AUTH_EXCLUDE` | _(empty)_ | Comma-separated external ports to serve **without** auth (e.g. `18189` for ComfyUI) |
 | `WORKSPACE` | `/workspace` | Shared workspace directory |
 
 Set these in the VastAI template's environment section, or pass them when creating an instance.

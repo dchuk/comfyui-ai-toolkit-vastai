@@ -1,9 +1,12 @@
 """Best-effort readiness: wait for the instance to run AND for ComfyUI to answer.
 
 `actual_status == running` only means the container started; ComfyUI may still
-be installing/auto-updating. The real signal is an HTTP response on port 18188.
-Timeouts degrade gracefully — we never hang forever, and the caller reports a
-"launched but not yet confirmed" message with a `vast logs` hint.
+be installing/auto-updating. The real signal is an HTTP response on ComfyUI's
+Caddy-proxied port (18189). Caddy fronts it with basic_auth, so an
+unauthenticated probe gets 401 (still < 500 → "up": the proxy + upstream are
+live; a down upstream returns 502). Timeouts degrade gracefully — we never hang
+forever, and the caller reports a "launched but not yet confirmed" message with
+a `vast logs` hint.
 """
 
 from __future__ import annotations

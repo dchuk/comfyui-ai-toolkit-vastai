@@ -14,19 +14,24 @@ from dataclasses import dataclass, field
 
 #: HTTP service ports that must be opened on the instance (22/ssh handled by --ssh).
 #: 8080 is Jupyter's externally-exposed port (Caddy proxies it to internal 18080).
-HTTP_PORTS: tuple[int, ...] = (1111, 18188, 18288, 8675, 8080)
+#: 18189 is ComfyUI's externally-exposed port: ComfyUI binds loopback (18188), so
+#: Caddy reverse-proxies 18189 -> 18188 and wraps it in the portal's basic-auth.
+HTTP_PORTS: tuple[int, ...] = (1111, 18189, 18288, 8675, 8080)
 
 #: Service label -> externally-exposed container port, used to build access URLs.
 SERVICE_PORTS: dict[str, int] = {
-    "ComfyUI": 18188,
+    "ComfyUI": 18189,
     "API Wrapper": 18288,
     "AI Toolkit": 8675,
     "Jupyter": 8080,
     "Instance Portal": 1111,
 }
 
-#: The service we HTTP-probe to decide an instance is genuinely ready.
-READINESS_PORT_INTERNAL: int = 18188
+#: The service we HTTP-probe to decide an instance is genuinely ready. This is
+#: ComfyUI's Caddy-proxied external port (18189); since Caddy fronts it with
+#: basic_auth, an unauthenticated probe gets 401 — which still confirms the
+#: Caddy + ComfyUI stack is up (a down upstream returns 502). See readiness.py.
+READINESS_PORT_INTERNAL: int = 18189
 
 #: Default VastAI template name (one per account; reused/updated, never duplicated).
 DEFAULT_TEMPLATE_NAME = "ComfyUI + AI-Toolkit"

@@ -78,11 +78,11 @@ def test_list_managed_filters(fake_runner):
 
 def test_instance_service_urls_from_running_ports():
     inst = Instance.from_raw(instance_raw())
-    assert inst.service_url(18188) == "http://70.69.192.6:41001"
+    assert inst.service_url(18189) == "http://70.69.192.6:41001"
     assert inst.service_url(8675) == "http://70.69.192.6:41003"
 
 
 def test_instance_urls_none_when_stopped():
     inst = Instance.from_raw(instance_raw(actual_status="exited", ports=None))
-    assert inst.service_url(18188) is None
+    assert inst.service_url(18189) is None
     assert inst.ssh_command() == "ssh -p 19878 root@ssh6.vast.ai"

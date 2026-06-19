@@ -10,7 +10,7 @@ from typing import Optional
 
 import typer
 
-from . import instances, offers, profiles, readiness, template, transfer, vastai
+from . import instances, models, offers, profiles, readiness, template, transfer, vastai
 from .errors import ReadinessTimeout, VastError
 from .models import DEFAULT_TEMPLATE_NAME, Profile
 
@@ -196,7 +196,7 @@ def ls(all_: bool = typer.Option(False, "--all", help="Include non-CLI instances
         return
     typer.echo(f"{'ID':<10} {'LABEL':<22} {'GPU':<14} {'STATUS':<10} {'$/HR':>7}  COMFYUI")
     for i in items:
-        url = i.service_url(18188) or "-"
+        url = i.service_url(models.SERVICE_PORTS["ComfyUI"]) or "-"
         typer.echo(
             f"{i.id:<10} {(i.label or '-'):<22} {i.gpu_name:<14} "
             f"{i.status:<10} {i.dph:>7.3f}  {url}"
