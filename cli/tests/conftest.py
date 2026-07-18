@@ -54,8 +54,8 @@ RUNNING_PORTS = {
     "22/tcp": [{"HostIp": "0.0.0.0", "HostPort": "41000"}],
     "1111/tcp": [{"HostIp": "0.0.0.0", "HostPort": "41004"}],
     "18189/tcp": [{"HostIp": "0.0.0.0", "HostPort": "41001"}],
-    "18288/tcp": [{"HostIp": "0.0.0.0", "HostPort": "41002"}],
-    "8675/tcp": [{"HostIp": "0.0.0.0", "HostPort": "41003"}],
+    "18289/tcp": [{"HostIp": "0.0.0.0", "HostPort": "41002"}],
+    "8676/tcp": [{"HostIp": "0.0.0.0", "HostPort": "41003"}],
 }
 
 
