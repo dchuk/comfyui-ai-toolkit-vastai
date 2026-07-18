@@ -17,11 +17,11 @@ AUTO_UPDATE = "true"
 # Make VastAI's blue "Open" button open the Instance Portal (1111), not SSH.
 # (Also baked into the image; set here so it works before an image rebuild.)
 OPEN_BUTTON_PORT = "1111"
-# Route every service through the Caddy auth proxy (external != internal port):
-# 18189->ComfyUI 18188, 18289->API wrapper 18288, 8676->AI Toolkit 8675,
-# 8080->Jupyter 18080. Must stay in lockstep with HTTP_PORTS in models.py.
-# (Also baked into the image; set here so it works before an image rebuild.)
-PORTAL_CONFIG = "localhost:1111:11111:/:Instance Portal|localhost:18189:18188:/:ComfyUI|localhost:18289:18288:/:API Wrapper|localhost:8676:8675:/:AI Toolkit|localhost:8080:18080:/:Jupyter|localhost:8080:8080:/terminals/1:Jupyter Terminal"
+# NOTE: PORTAL_CONFIG is deliberately NOT set here. It lives in the image
+# (Dockerfile ENV) because VastAI's API silently truncates long --env values at
+# instance creation (observed: the two Jupyter entries dropped). The baked ENV
+# is not subject to that limit. Keep it in the Dockerfile, in lockstep with
+# HTTP_PORTS in models.py.
 
 # SDXL / SD1.5 image generation — modest VRAM.
 [profiles.sdxl]
